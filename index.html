@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Coins: Hold &amp; Win</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #03060f;
+        overflow: hidden;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #app {
+        position: fixed;
+        inset: 0;
+        display: block;
+      }
+      #app canvas {
+        display: block;
+      }
+      /* Loading splash shown until Pixi boots */
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 18px;
+        background: radial-gradient(circle at 50% 40%, #0b1f4d 0%, #05091b 70%, #03060f 100%);
+        color: #ffd25a;
+        letter-spacing: 4px;
+        font-weight: 700;
+        text-transform: uppercase;
+        transition: opacity 0.5s ease;
+        z-index: 10;
+      }
+      #boot.hide { opacity: 0; pointer-events: none; }
+      .coin-spin {
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #fff6c4, #ffcf3f 45%, #c8881a 80%);
+        box-shadow: 0 0 24px #ffcf3f, inset 0 0 12px #fff2b0;
+        animation: flip 1s linear infinite;
+      }
+      @keyframes flip {
+        0%   { transform: rotateY(0deg)   scale(1);   }
+        50%  { transform: rotateY(180deg) scale(0.6); }
+        100% { transform: rotateY(360deg) scale(1);   }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="boot">
+      <div class="coin-spin"></div>
+      <div>Loading&hellip;</div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
