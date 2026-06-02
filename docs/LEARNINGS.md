@@ -8,6 +8,15 @@ something.** Include the date and enough context to be useful later.
 
 ## 2026-06-02
 
+- **Code-quality gate, not just correctness (Sonar "AI code quality" finding).**
+  Functional pass-rate ≠ maintainability: AI tends to bloat and over-nest code
+  even when tests pass. Response — encode the rule as a _gate_ (I can't reliably
+  hold "keep it lean" across a long session, but a check can): added deep-nesting
+  - net-growth heuristics to `scripts/audit-drift.mjs` (deterministic, diff-based)
+    and a full AST `core/complexity` harness in testing-kits (cyclomatic +
+    cognitive + nesting). Dogfooding the harness caught _its own_ first draft as
+    too complex — proof the gate works on its author.
+
 - **Retuned the shipped game to a genuine 96% TOTAL RTP (feature-driven), removed
   demo nudges** (ADR-0011). Goal was "as legally close to a real RNG slot as
   possible": one certified total (base + Hold & Win), played outcome = certified

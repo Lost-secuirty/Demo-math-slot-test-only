@@ -6,6 +6,15 @@ this project is a demo and is not formally versioned.
 
 ## [Unreleased]
 
+### Added
+
+- **Drift-audit code-bloat / complexity gate** (`scripts/audit-drift.mjs`):
+  flags deep nesting (src lines indented past ~8 levels) and large net `src/`
+  growth without tests, and always prints the `src/` net line delta. A
+  deterministic proxy for the cyclomatic/cognitive-complexity gate (full AST
+  version lives in testing-kits `core/complexity`), motivated by the Sonar
+  finding that AI code bloats/over-nests even when it passes tests.
+
 ### Changed
 
 - **Retuned the shipped game to a genuine ~96% TOTAL RTP** (base lines + Hold &
