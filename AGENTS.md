@@ -36,8 +36,10 @@ npm run audit        # drift audit on the current branch (see docs/DRIFT-AUDIT.m
   TypeScript). WebAudio for SFX. lil-gui + stats.js for the debug panel.
 - **`src/`** — `main.js` (boot + game-state machine), `reels.js` (reel engine),
   `symbols.js` (procedural textures), `wins.js` (payline eval), `outcome.js`
-  (weighted RNG), `holdAndWin.js` (bonus), `effects.js`, `ui.js`, `audio.js`,
-  `debug.js`, and **`config.js` — all tunables live here.**
+  (pure weighted RNG — no nudges), `holdAndWin.js` (bonus), `slotmath.js` (the
+  certification harness), `effects.js`, `ui.js`, `audio.js`, `debug.js`, and
+  **`config.js` — all tunables live here.** The game certifies to a ~96% TOTAL
+  RTP; retune `config.js` and re-verify (`docs/PAR-SHEET.md`, `docs/adr/0011`).
 - **`scripts/audit-drift.mjs`**, **`test/`**, **`verify.mjs`**, **`docs/`**
   (`SPEC.md`, `adr/`, `LEARNINGS.md`, `DRIFT-AUDIT.md`, `AGENT-SCAFFOLDING.md`).
 

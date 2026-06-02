@@ -54,16 +54,21 @@ export const SYMBOLS = [
   { id: 'coin', kind: 'coin', color: 0xffcf3f, tier: 0 }, // bonus
 ];
 
-// Reel strip weighting — higher weight = more common. Coin is rare.
+// Virtual reel-strip weighting (stops) — higher weight = more common.
+// This is the primary RTP lever. The strip is sized in the hundreds (like a
+// real virtual strip) so RTP can be tuned at fine resolution. Coin is the
+// bonus symbol and is deliberately frequent (~25%/cell) so that 6+ coins —
+// the Hold & Win trigger — land at a real rate of ~1 in 100 spins. See
+// docs/PAR-SHEET.md + docs/adr/0011 for how the certified 96% TOTAL is split.
 export const SYMBOL_WEIGHTS = {
-  cherry: 26,
-  lemon: 24,
-  plum: 22,
-  watermelon: 18,
-  bell: 13,
-  bar: 9,
-  seven: 6,
-  coin: 7, // tuned so 6+ coin bonus triggers occasionally
+  cherry: 520,
+  lemon: 480,
+  plum: 440,
+  watermelon: 360,
+  bell: 260,
+  bar: 180,
+  seven: 120,
+  coin: 788, // ~25%/cell -> 6+ coins (Hold & Win trigger) ~1 in 100 spins
 };
 
 // ---- Paylines over the 3x3 grid (row indices per reel column) ----
@@ -88,12 +93,21 @@ export const PAYTABLE = {
 };
 
 // ---- Hold & Win bonus ----
+// This is the RTP engine of the game (it contributes ~50pp of the ~96% total;
+// see docs/PAR-SHEET.md). The coin economy below is read by BOTH the live
+// feature (holdAndWin.js) AND the math model (slotmath.js) so the played game
+// is identical to the certified math — change a number here and re-certify.
 export const BONUS = {
   triggerCount: 6, // coins needed on the board to start the bonus
   respins: 3, // respins reset to this each time a new coin lands
-  // coin cash values (x bet) used to fill landed coins
-  coinValues: [1, 2, 3, 5, 8, 10, 15, 20, 25],
-  coinValueWeights: [22, 20, 16, 12, 10, 8, 6, 4, 2],
+  respinLandChance: 0.05, // per empty cell, per respin (full-board fill is rare)
+  // coin cash values (x bet) used to fill landed coins (weighted; cash EV ~4x)
+  coinValues: [1, 2, 3, 4, 5, 8, 10, 15, 20],
+  coinValueWeights: [24, 21, 17, 12, 9, 7, 5, 3, 2],
+  // per-coin jackpot odds — cumulative thresholds on a [0,1) roll: a coin is a
+  // MAJOR if roll < major, else MINOR if < minor, else MINI if < mini, else a
+  // weighted cash value. (~5.5% of coins are jackpot coins.)
+  jackpotOdds: { major: 0.003, minor: 0.015, mini: 0.055 },
 };
 
 // ---- Jackpots (x bet). GRAND awarded when all 9 cells fill with coins ----
@@ -101,7 +115,7 @@ export const JACKPOTS = {
   MINI: { mult: 20, color: COLORS.jackpotMini },
   MINOR: { mult: 50, color: COLORS.jackpotMinor },
   MAJOR: { mult: 200, color: COLORS.jackpotMajor },
-  GRAND: { mult: 1000, color: COLORS.jackpotGrand },
+  GRAND: { mult: 500, color: COLORS.jackpotGrand },
 };
 export const JACKPOT_ORDER = ['MINI', 'MINOR', 'MAJOR', 'GRAND'];
 
@@ -131,12 +145,6 @@ export const BIGWIN = {
 
 // ---- Global time scale (debug slow-mo). 1 = normal. ----
 export const TIME = { scale: 1 };
-
-// ---- Demo tuning (this is a show-piece, so keep the action lively) ----
-export const DEMO = {
-  bonusChance: 0.05, // chance a spin is forced into a Hold & Win trigger
-  winChance: 0.42, // chance a non-bonus spin is nudged to a line win
-};
 
 // ---- Visual quality (drop these if any frame dips) ----
 export const QUALITY = {
@@ -191,23 +199,11 @@ export const THEMES = {
 };
 export const THEME_NAMES = Object.keys(THEMES);
 
-// ---- Certified RTP preset (see docs/PAR-SHEET.md + docs/adr/0010) ----
-// The default game above is a deliberately generous show-piece demo: its
-// base (line) RTP is ~91.2% and it leans on DEMO nudges for liveliness.
-// This preset retunes ONLY the virtual-reel weights (the primary RTP
-// lever — paytable unchanged) so the base game certifies to a real ~96%
-// RTP, the regulated-online-slot target. Verified by the math harness:
-// theoretical 96.0328% (exact enumeration) and Monte-Carlo 95.99% / 2M
-// spins (theory inside the 95% CI). Apply with:
-//   slotmath.buildModel({ weights: RTP96_WEIGHTS })
-export const RTP96_WEIGHTS = {
-  cherry: 26,
-  lemon: 24,
-  plum: 22,
-  watermelon: 21,
-  bell: 11,
-  bar: 7,
-  seven: 5,
-  coin: 6,
-};
-export const RTP96_TARGET = 0.96;
+// ---- Certified RTP target (see docs/PAR-SHEET.md + docs/adr/0011) ----
+// The default config above is tuned so the game's TOTAL RTP (base lines +
+// the Hold & Win feature, which contributes the majority) certifies to the
+// regulated-online-slot target of ~96%, verified end-to-end by the math
+// harness (`monteCarloFullGame()`). There are no demo nudges: the played
+// game draws each cell from the weights above and pays strictly by the
+// paytable, so the experienced RTP equals the certified RTP.
+export const RTP_TARGET = 0.96;

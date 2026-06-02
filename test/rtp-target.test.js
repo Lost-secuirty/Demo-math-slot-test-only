@@ -1,38 +1,58 @@
 import { describe, it, expect } from 'vitest';
-import { buildModel, defaultModel, theoreticalRtp, monteCarloLine } from '../src/slotmath.js';
-import { RTP96_WEIGHTS, RTP96_TARGET, SYMBOL_WEIGHTS, PAYTABLE } from '../src/config.js';
+import {
+  defaultModel,
+  theoreticalRtp,
+  monteCarloFullGame,
+  symbolProbabilities,
+} from '../src/slotmath.js';
+import { RTP_TARGET } from '../src/config.js';
 
-// Certifies the RTP96 preset to a real ~96% the way a lab does: the
-// theoretical (exact) figure AND the Monte-Carlo (actual) figure must both
-// land in the certified band, and the theoretical value must sit inside the
-// simulated 95% confidence interval (convergence). Default game untouched.
-describe('RTP96 preset certification', () => {
-  const model = buildModel({ weights: RTP96_WEIGHTS });
+// Certifies the SHIPPED game (the default config) to a real ~96% TOTAL RTP —
+// base lines + the Hold & Win feature — the way a lab certifies a hold-and-win
+// slot: the base game is exact (payline enumeration); the feature is
+// intractable to enumerate, so it's measured by a high-volume seeded
+// Monte-Carlo. There are no demo nudges — the played game draws from these
+// same weights and pays strictly by the paytable — so the certified RTP IS the
+// experienced RTP. Headline figures + method: docs/PAR-SHEET.md, docs/adr/0011.
+describe('certified ~96% TOTAL RTP (shipped/default game)', () => {
+  const model = defaultModel();
   const th = theoreticalRtp(model);
 
-  it('retunes weights only — the paytable is unchanged', () => {
-    expect(model.paytable).toEqual(PAYTABLE);
-    expect(RTP96_WEIGHTS).not.toEqual(SYMBOL_WEIGHTS); // it really is a retune
-    expect(Object.keys(RTP96_WEIGHTS).sort()).toEqual(Object.keys(SYMBOL_WEIGHTS).sort());
+  it('base (line) RTP is exact and lean — the feature carries the rest', () => {
+    expect(th.lineRtp).toBeCloseTo(0.45689, 4); // exact enumeration (golden)
+    expect(th.lineRtp).toBeLessThan(RTP_TARGET); // base alone is well below 96%
   });
 
-  it('theoretical RTP lands in the certified band [95.5%, 96.5%]', () => {
-    expect(th.lineRtp).toBeGreaterThanOrEqual(0.955);
-    expect(th.lineRtp).toBeLessThanOrEqual(0.965);
-    expect(th.lineRtp).toBeCloseTo(0.9603, 3); // golden: 96.0328%
+  it('the Hold & Win feature triggers naturally ~1 in 100 spins (exact binomial)', () => {
+    const p = symbolProbabilities(model.weights).p.coin;
+    const C = (n, k) => {
+      let r = 1;
+      for (let i = 0; i < k; i++) r = (r * (n - i)) / (i + 1);
+      return r;
+    };
+    let trigger = 0; // P(>=6 coins among the 9 cells)
+    for (let k = 6; k <= 9; k++) trigger += C(9, k) * p ** k * (1 - p) ** (9 - k);
+    expect(trigger).toBeCloseTo(0.01006, 4); // ~1 in 99 spins
   });
 
-  it('hits the 96% target far better than the demo config', () => {
-    const demo = theoreticalRtp(defaultModel()).lineRtp;
-    expect(Math.abs(th.lineRtp - RTP96_TARGET)).toBeLessThan(Math.abs(demo - RTP96_TARGET));
-  });
+  it('TOTAL RTP (lines + feature) certifies to ~96% — seeded Monte-Carlo', () => {
+    const fg = monteCarloFullGame(model, { seed: 2026, spins: 12_000_000 });
+    // Deterministic regression pin (mulberry32 is integer-stable across
+    // platforms): any change to weights/paytable/bonus shifts this and trips.
+    expect(fg.rtp).toBeCloseTo(0.96082, 4);
+    // Certification band around the 96% target.
+    expect(fg.rtp).toBeGreaterThanOrEqual(0.955);
+    expect(fg.rtp).toBeLessThanOrEqual(0.965);
+    // The feature is the RTP engine, not the base lines.
+    expect(fg.bonusRtp).toBeGreaterThan(fg.lineRtp);
+    expect(fg.bonusRtp).toBeGreaterThan(0.45);
+    // The simulated line component lands on the exact theoretical base RTP.
+    expect(fg.lineRtp).toBeCloseTo(th.lineRtp, 2);
+  }, 60_000);
 
-  it('Monte-Carlo (actual) RTP also lands in band and brackets the theory', () => {
-    const mc = monteCarloLine(model, { seed: 2026, spins: 2_000_000 });
-    expect(mc.rtp).toBeGreaterThanOrEqual(0.955);
-    expect(mc.rtp).toBeLessThanOrEqual(0.965);
-    // convergence: the exact figure is inside the simulated 95% CI
-    expect(th.lineRtp).toBeGreaterThanOrEqual(mc.ci95Low);
-    expect(th.lineRtp).toBeLessThanOrEqual(mc.ci95High);
+  it('is deterministic for a fixed seed (reproducible certification)', () => {
+    const a = monteCarloFullGame(model, { seed: 7, spins: 200_000 });
+    const b = monteCarloFullGame(model, { seed: 7, spins: 200_000 });
+    expect(a.rtp).toBe(b.rtp);
   });
 });

@@ -9,7 +9,6 @@ import {
   ECONOMY,
   BONUS,
   GRID,
-  RTP96_WEIGHTS,
 } from '../src/config.js';
 
 const IDS = SYMBOLS.map((s) => s.id);
@@ -58,6 +57,22 @@ describe('config invariants', () => {
     expect(BONUS.triggerCount).toBeGreaterThan(0);
     expect(BONUS.triggerCount).toBeLessThanOrEqual(GRID.reels * GRID.rows);
   });
+
+  it('bonus jackpot odds are ordered probabilities in (0,1)', () => {
+    const { major, minor, mini } = BONUS.jackpotOdds;
+    for (const v of [major, minor, mini]) {
+      expect(v).toBeGreaterThan(0);
+      expect(v).toBeLessThan(1);
+    }
+    // cumulative thresholds must be strictly increasing: major < minor < mini
+    expect(major).toBeLessThan(minor);
+    expect(minor).toBeLessThan(mini);
+  });
+
+  it('respin land chance is a probability in (0,1)', () => {
+    expect(BONUS.respinLandChance).toBeGreaterThan(0);
+    expect(BONUS.respinLandChance).toBeLessThan(1);
+  });
 });
 
 // ---- Extended invariants (contract/property-kit ports) ----
@@ -81,9 +96,8 @@ describe('config invariants — extended (ports)', () => {
     expect(seen.size).toBe(5);
   });
 
-  it('RTP96 preset is a real retune: same keys, all positive, differs from default', () => {
-    expect(Object.keys(RTP96_WEIGHTS).sort()).toEqual(Object.keys(SYMBOL_WEIGHTS).sort());
-    expect(Object.values(RTP96_WEIGHTS).every((w) => w > 0)).toBe(true);
-    expect(RTP96_WEIGHTS).not.toEqual(SYMBOL_WEIGHTS);
+  it('coin is the most frequent symbol (it drives the Hold & Win feature)', () => {
+    const max = Math.max(...Object.values(SYMBOL_WEIGHTS));
+    expect(SYMBOL_WEIGHTS.coin).toBe(max);
   });
 });

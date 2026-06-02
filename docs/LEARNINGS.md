@@ -8,19 +8,45 @@ something.** Include the date and enough context to be useful later.
 
 ## 2026-06-02
 
+- **Retuned the shipped game to a genuine 96% TOTAL RTP (feature-driven), removed
+  demo nudges** (ADR-0011). Goal was "as legally close to a real RNG slot as
+  possible": one certified total (base + Hold & Win), played outcome = certified
+  math. Key findings while tuning:
+  - **A 3×3 hold-and-win feature is _powerful_ and its RTP is steep in coin
+    frequency.** With coins at a feature-driven ~25%/cell (trigger ~1 in 100), a
+    rich bonus blew the total to 120–160%. The lever is **E[bonus|trigger]**,
+    which is ~structural (independent of coin weight): pick it (via the feature
+    economy) to place the 96% crossing at the coin weight you want. We landed
+    base 45.7% + feature 50.3% = 96.0%.
+  - **The GRAND dominated and was firing in ~10–25% of bonuses** because a 9-cell
+    board fills easily with respin-resets. Tamed via a rare `respinLandChance`
+    (0.05) + GRAND 1000×→500× so GRAND is ~2% of bonuses (~1 in 4,300 spins).
+  - **Use the coin _weight_ as the fine RTP knob, on a large virtual strip.**
+    Scaling the strip ×20 (total ~3,148 stops) gives ~0.25pp resolution per coin
+    stop — like a real virtual reel strip — so 96% is hit with **round** jackpots
+    instead of ugly scaled values. Bisection on coin stops (deterministic seed)
+    converged to coin=788.
+  - **The bonus has high variance — don't certify it at low N.** Single-seed 3M
+    spins read 97.2% (CI ±1.2pp); it only settles to ~96.0% by ~20M (CI ±0.44).
+    The cert test pins a deterministic **12M**-spin total (seed 2026 = 96.08%);
+    5 seeds × 20M mean = 96.008%.
+  - **One source of truth for feature odds:** moved jackpot odds + respin-land
+    chance into `config.js` (`BONUS.jackpotOdds`, `BONUS.respinLandChance`); both
+    `holdAndWin.js` (live) and `slotmath.js` (model) read them, so model == game.
+
 - **Slot-math verification harness** (`src/slotmath.js`, pure, no Pixi): exact
   `theoreticalRtp()` by payline enumeration + seeded `monteCarloLine/FullGame()`
   with a 95% CI + `parSheet()`. Method mirrors how labs (GLI-19/eCOGRA/iTech)
   certify: theoretical vs Monte-Carlo must converge (theory inside the CI).
-  Certified figures live in `docs/PAR-SHEET.md`. Demo base RTP = **91.22%**;
-  the opt-in `RTP96_WEIGHTS` preset (paytable unchanged) = **96.0328%** theory /
-  **95.99%** measured (2M spins, theory in CI). Default game untouched. See ADR-0010.
+  Certified figures live in `docs/PAR-SHEET.md`. _(Superseded by the top
+  2026-06-02 entry + ADR-0011: the default game was retuned to a genuine 96%
+  TOTAL and the `RTP96` preset removed. Historical: demo base RTP was 91.22%.)_
 
-- **The Hold & Win bonus never triggers _naturally_ in the demo config.** Coin is
-  ~5.6%/cell, so P(6+ of 9 cells) ≈ 0 → bonus RTP ≈ 0% under fair play. The demo's
-  bonus liveliness is the `DEMO.bonusChance` forced trigger, **not** fair math, so
-  base (line) RTP is the certified game RTP. A real-money build would raise the
-  coin weight / lower coin value and fold the bonus in via `monteCarloFullGame()`.
+- **(Historical — superseded by ADR-0011.)** The Hold & Win bonus never triggered
+  _naturally_ in the old demo config (coin ~5.6%/cell → P(6+ of 9) ≈ 0); its
+  liveliness came from a `DEMO.bonusChance` forced trigger. The retune raised the
+  coin weight (~25%/cell) and folded the feature into the certified total via
+  `monteCarloFullGame()` — exactly the "real-money build" path noted here.
 
 - **Seed Monte-Carlo & statistical tests with mulberry32** (`test/helpers/`): a
   fixed seed makes every statistic deterministic → no flaky CI. Drive code that

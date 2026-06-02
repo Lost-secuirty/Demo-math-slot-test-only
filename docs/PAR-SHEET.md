@@ -3,64 +3,110 @@
 A **Probability / Accounting Report**: the certified math of the game, the way
 a testing lab (GLI, eCOGRA, iTech) documents and verifies a slot. Every figure
 here is produced by the in-repo math harness (`src/slotmath.js`) and locked by
-tests (`test/slotmath.test.js`, `test/rtp-target.test.js`, `test/rng-stats.test.js`).
+tests (`test/slotmath.test.js`, `test/rtp-target.test.js`, `test/rng-stats.test.js`,
+`test/bonus.test.js`).
 
-> Pure entertainment demo — play money only. The "RTP96" column shows that the
-> same pipeline can certify a real, regulated-market 96% game (see ADR-0010).
+> Pure entertainment demo — play money only, no real wagering. The math below
+> is nonetheless built to a real regulated-online-slot spec (a single certified
+> **TOTAL** RTP of ~96%), so the pipeline mirrors how a live game is signed off.
 
-## How RTP is verified (two values, must agree)
+## The one number that matters: TOTAL RTP ≈ 96%
 
-1. **Theoretical RTP** — exact, by enumerating every 3-symbol payline outcome
-   weighted by reel probability (`theoreticalRtp()`). Total RTP = per-line RTP ×
-   5 paylines (expectation is linear).
-2. **Actual RTP** — a seeded Monte-Carlo of millions of spins with a 95%
-   confidence interval (`monteCarloLine()`). The convergence check: the exact
-   figure must sit **inside** the simulated CI.
+This is a **hold-and-win** game, so RTP is certified as a single TOTAL across
+the base lines **and** the Hold & Win feature — exactly as a lab certifies a
+Lightning-Link-style title (the feature, not the base game, is the RTP engine).
 
-Reproduce:
+| Component                       | RTP (×bet) |
+| ------------------------------- | ---------: |
+| Base game (5 paylines)          |   ~45.69%  |
+| Hold & Win feature              |   ~50.3%   |
+| **TOTAL**                       | **~96.0%** |
+| House edge (total)              |    ~4.0%   |
+
+- **Base game** is **exact** (full payline enumeration — zero variance).
+- **Feature** is intractable to enumerate, so it's measured by a high-volume
+  seeded Monte-Carlo (`monteCarloFullGame()`), the same way labs handle
+  hold-and-win features.
+- **5 seeds × 20M spins:** mean total **96.008%**, range **95.83%–96.24%**
+  (per-seed 95% CI ±0.44pp). Deterministic check (seed 2026, 12M spins):
+  **96.08%** — pinned in `test/rtp-target.test.js`.
+
+### No nudges — played RTP **equals** certified RTP
+
+The live game (`src/outcome.js`) draws each of the 9 cells independently from
+the reel-strip weights below and pays strictly by the paytable. There are **no
+forced wins and no forced bonuses** — the experienced RTP is the certified RTP.
+(An earlier build leaned on demo "nudges"; those were removed so the game is as
+close to a real RNG slot as possible.)
+
+## How it's verified
 
 ```bash
 node --input-type=module -e "import('./src/slotmath.js').then(m=>console.log(m.parSheet()))"
-npm test           # locks the figures below
-npm run mutation   # proves the tests actually catch math bugs (100% kill rate)
+npm test           # locks every figure below (incl. the 12M-spin total)
+npm run mutation   # proves the math tests catch bugs (100% kill rate)
 ```
+
+1. **Theoretical (exact)** — enumerate every 3-symbol payline outcome weighted
+   by reel probability (`theoreticalRtp()`); total base RTP = per-line × 5.
+2. **Actual (Monte-Carlo)** — seeded millions of spins with a 95% CI
+   (`monteCarloLine()` for the base, `monteCarloFullGame()` for base+feature).
+   Convergence check: the exact base figure sits **inside** the simulated CI.
+3. **RNG battery** — seeded mulberry32 passes chi-square / KS / runs /
+   serial-correlation (`test/rng-stats.test.js`); labs reference NIST SP 800-22.
 
 ## Reel model
 
-3 reels × 3 rows, each cell drawn from one weighted virtual strip (weights are
-the primary RTP lever; the paytable is identical across both columns below).
+3 reels × 3 rows. Each cell is drawn independently from one weighted virtual
+strip of **3,148 stops** (the primary RTP lever):
+
+| Symbol     | Stops | Probability |
+| ---------- | ----: | ----------: |
+| cherry     |   520 |     16.52%  |
+| lemon      |   480 |     15.25%  |
+| plum       |   440 |     13.98%  |
+| watermelon |   360 |     11.44%  |
+| bell       |   260 |      8.26%  |
+| bar        |   180 |      5.72%  |
+| seven      |   120 |      3.81%  |
+| **coin**   |   788 |    **25.03%** |
+
+> **Modeling note:** cells are i.i.d. draws from one strip — a simplification
+> vs. physical per-reel strips (which add positional correlation). The live
+> reel engine (`src/reels.js`) lands on exactly this i.i.d. grid, so the model
+> matches the played game. A multi-strip model would be the next fidelity step.
+
 Paytable (×bet, 3-of-a-kind on a line): cherry 4, lemon 5, plum 6, watermelon
 10, bell 20, bar 40, seven 100. Five fixed paylines (middle, top, bottom, two
-diagonals). Coins never pay a line — 6+ coins trigger the Hold & Win bonus.
+diagonals). Coins never pay a line — they feed the Hold & Win trigger.
 
-## Certified figures
+## Base-game figures (exact)
 
-| Metric                       | Demo (default)  | RTP96 preset                  |
-| ---------------------------- | --------------- | ----------------------------- |
-| Virtual stops / reel         | 125             | 122                           |
-| **Theoretical base RTP**     | **91.2210%**    | **96.0328%**                  |
-| House edge                   | 8.7790%         | 3.9672%                       |
-| Monte-Carlo RTP (seeded)     | 91.05% (N=500k) | **95.992%** (N=2M, seed 2026) |
-| 95% CI brackets theory       | ✅              | ✅ ([95.521%, 96.463%])       |
-| Hit frequency (per line)     | 2.6123%         | 2.9247%                       |
-| Volatility (SD per line)     | 1.7134          | 1.5209                        |
-| Jackpot — 3× seven on a line | 1 in 9,042      | 1 in 14,527                   |
+| Metric                          |       Value |
+| ------------------------------- | ----------: |
+| Base (line) RTP                 |    45.6889% |
+| Hit frequency (per line)        |     1.3084% |
+| Hit frequency (any line, sim)   |      ~6.32% |
+| Volatility (SD per line)        |      1.2160 |
+| Top line pay — 3× seven         | 1 in 18,053 |
 
-Symbol probabilities (RTP96): cherry 21.31%, lemon 19.67%, plum 18.03%,
-watermelon 17.21%, bell 9.02%, bar 5.74%, seven 4.10%, coin 4.92%.
+## Hold & Win feature
 
-## Hold & Win bonus
+Coins land ~25% of cells, so **6+ coins** (the trigger) appear naturally about
+**1 in 99 spins** (exact binomial). Triggering coins lock; empty cells respin
+(`respinLandChance` 5% each, per respin) and the respin counter resets to 3 on
+every new coin. Each coin carries a weighted cash value (1–20×, cash EV ≈ 4.0×)
+or a jackpot — MINI 20× / MINOR 50× / MAJOR 200× (per-coin odds 4% / 1.2% /
+0.3%); average coin value ≈ **5.8×**. Filling all 9 cells awards the **GRAND
+500×**.
 
-Triggering 6+ coins is intractable to enumerate, so the bonus is measured by
-Monte-Carlo (`monteCarloFullGame()` / `simulateBonus()`). Each coin holds a cash
-value (weighted 1–25× bet, EV ≈ 5.5×) or a jackpot (MINI 20× @ ~11%, MINOR 50×
-@ 6%, MAJOR 200× @ 3%); filling all 9 cells awards the GRAND (1000×). Average
-coin value ≈ **15.6× bet**.
+| Feature metric                  |          Value |
+| ------------------------------- | -------------: |
+| Trigger (6+ coins), exact       |    1 in 99.4   |
+| Feature RTP (of the 96% total)  |        ~50.3%  |
+| GRAND (all 9 filled)            | ~1 in 4,300 spins |
+| Max win observed (20M spins)    |     ~810–977×  |
 
-**Finding:** with the demo weights, 6+ coins essentially **never** land
-naturally (coin ≈ 5.6% per cell → P(≥6 of 9) ≈ 0), so the demo's bonus
-liveliness comes from the `DEMO.bonusChance` forced trigger, **not** fair math.
-The base RTP figures above are therefore the certified game RTP; the bonus is a
-presentation feature layered on top. A real-money build would raise the coin
-weight / lower its value and re-run `monteCarloFullGame()` to fold the bonus
-into a single certified total.
+Measured by `monteCarloFullGame()` / `simulateBonus()`, whose coin odds are read
+from `config.js` (`BONUS.jackpotOdds`, `BONUS.respinLandChance`) — the **same**
+constants the live feature (`holdAndWin.js`) uses, so model = game.

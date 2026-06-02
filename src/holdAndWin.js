@@ -38,11 +38,13 @@ export class BonusGame {
   }
 
   _decideCoin(bet) {
-    // small chance of a jackpot coin, otherwise a cash value
+    // small chance of a jackpot coin, otherwise a cash value. Odds come from
+    // config (BONUS.jackpotOdds) so this matches the certified math model.
+    const { major, minor, mini } = BONUS.jackpotOdds;
     const roll = Math.random();
-    if (roll < 0.03) return { jackpot: 'MAJOR', amount: JACKPOTS.MAJOR.mult * bet };
-    if (roll < 0.09) return { jackpot: 'MINOR', amount: JACKPOTS.MINOR.mult * bet };
-    if (roll < 0.2) return { jackpot: 'MINI', amount: JACKPOTS.MINI.mult * bet };
+    if (roll < major) return { jackpot: 'MAJOR', amount: JACKPOTS.MAJOR.mult * bet };
+    if (roll < minor) return { jackpot: 'MINOR', amount: JACKPOTS.MINOR.mult * bet };
+    if (roll < mini) return { jackpot: 'MINI', amount: JACKPOTS.MINI.mult * bet };
     const v = weightedPick(BONUS.coinValues, BONUS.coinValueWeights);
     return { jackpot: null, amount: v * bet };
   }
@@ -176,10 +178,10 @@ export class BonusGame {
       const empties = emptyCells();
       await this._respinFlicker(empties);
 
-      // decide new coins this respin
+      // decide new coins this respin (land chance from config -> matches model)
       const landed = [];
       for (const cell of empties) {
-        if (Math.random() < 0.16) landed.push(cell);
+        if (Math.random() < BONUS.respinLandChance) landed.push(cell);
       }
 
       if (landed.length > 0) {
