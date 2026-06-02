@@ -6,3 +6,5 @@ shot-*.png
 # generated drift-audit report + scratch
 audit-report.md
 .audit/
+# local agent observability log (hook events)
+.claude/logs/

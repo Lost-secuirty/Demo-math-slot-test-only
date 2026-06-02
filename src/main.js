@@ -256,18 +256,20 @@ import { tween, wait, Ease } from './utils.js';
 
     if (res.coinCount >= BONUS.triggerCount) {
       const won = await bonus.run(res.coinCells, state.bet);
-      await celebrate(won);
       state.balance += won;
       ui.setBalance(state.balance);
       ui.setWin(won);
+      await celebrate(won);
       return;
     }
 
     if (res.total > 0) {
-      await presentLineWins(res);
-      await celebrate(res.total);
+      // credit the win as soon as it's determined, then play the (cosmetic)
+      // celebration — the player's balance shouldn't wait on the animation.
       state.balance += res.total;
       ui.setBalance(state.balance);
+      await presentLineWins(res);
+      await celebrate(res.total);
     }
   }
 
@@ -437,6 +439,11 @@ import { tween, wait, Ease } from './utils.js';
     setGodrays(on) {
       QUALITY.godrays = on;
       rays.visible = on;
+    },
+    // merge overrides into QUALITY (live). Used by verify.mjs to disable the
+    // particle storm so the headless software-WebGL renderer stays responsive.
+    setQuality(q) {
+      Object.assign(QUALITY, q);
     },
     repaint() {
       paintBackground();

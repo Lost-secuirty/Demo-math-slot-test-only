@@ -6,6 +6,36 @@ something.** Include the date and enough context to be useful later.
 
 ---
 
+## 2026-06-02
+
+- **Credit wins when determined, not after the animation.** `resolve()` in
+  `src/main.js` now does `state.balance += win` _before_ `presentLineWins` /
+  `celebrate` (same for the bonus). The rolling counter is cosmetic; the player's
+  balance shouldn't wait on a multi-second celebration. This is also what makes
+  the win assertable in a slow/headless renderer.
+
+- **Headless software-WebGL (this container) is ~2fps and can't finish the
+  celebration animations.** Two compounding causes: (1) the reel engine clamps
+  per-frame `dt` to 0.05s (`src/reels.js`), so at low fps game-time advances
+  slower than wall-clock → animations run in real-time slow-motion; (2) big-win
+  particle bursts saturate the software rasterizer. Net effect: a winning spin's
+  `celebrate()` can stall for tens of seconds, so `busy` looks stuck. **This is
+  an environment artifact, not a game bug** — real browsers run at 60fps and the
+  win/bonus render fine (see screenshots).
+
+- **How `verify.mjs` stays reliable despite the above:** disable particles via
+  `window.__slot.setQuality({ particlesPerBurst: 0, maxParticles: 0 })`; assert
+  settling with a **forced no-win** spin (no celebration); assert payout by
+  forcing a win and **polling the balance from Node** with a generous budget
+  (credit lands before the animation); and **observe (not gate)** the animated
+  bonus. The win/bonus _economics_ are covered deterministically by Vitest
+  (`test/wins.test.js`).
+
+- **Don't over-invest debugging an environment artifact** (the upgrade-ROI rule
+  applies to debugging too): chasing the headless stall cost far more than it was
+  worth once the logic was proven correct. Prove the logic, scope the test to
+  what the environment can reliably observe, and document the gap.
+
 ## 2026-06-01
 
 - **PR drift audit is free without an API key.** `scripts/audit-drift.mjs` is a

@@ -76,4 +76,11 @@ npm run audit        # drift audit on the current branch (see docs/DRIFT-AUDIT.m
 3. **Stuck-bug protocol** — if a bug isn't a fast fix, or the same thing errors
    twice, look up known edge cases / similar issues before guessing again.
 4. **No shortcuts** — never cheat, skip, gut, or cut scope to save time. Plan
-   fully, then do. Verify before claiming done.
+   fully, then do.
+5. **Verify before claiming done — "runs" is not "works".** Run the relevant
+   check and show the evidence (test output, the actual value/behavior), not just
+   that it compiled or loaded. Don't report success you haven't observed; if a
+   gate (CI, deploy) isn't confirmed yet, say "running/unconfirmed," not "green."
+6. **Don't declare a tool or approach broken on the first failure.** Re-check the
+   inputs/parameters and retry once with corrections before concluding it doesn't
+   work — most "tool is broken" turns out to be a wrong argument.
