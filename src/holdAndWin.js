@@ -94,9 +94,6 @@ export class BonusGame {
     await tween(
       360,
       (t, e) => {
-        sp.scale.set(
-          0.1 + e * ((GRID.symbolSize * 0.92) / this.textures.coin.width - 0.1) + e * 0.0,
-        );
         sp.scale.set(0.1 + 0.9 * e);
         lab.alpha = Math.max(0, (t - 0.5) * 2);
       },
