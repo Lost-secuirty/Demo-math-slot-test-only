@@ -8,6 +8,34 @@ something.** Include the date and enough context to be useful later.
 
 ## 2026-06-02
 
+- **Slot-math verification harness** (`src/slotmath.js`, pure, no Pixi): exact
+  `theoreticalRtp()` by payline enumeration + seeded `monteCarloLine/FullGame()`
+  with a 95% CI + `parSheet()`. Method mirrors how labs (GLI-19/eCOGRA/iTech)
+  certify: theoretical vs Monte-Carlo must converge (theory inside the CI).
+  Certified figures live in `docs/PAR-SHEET.md`. Demo base RTP = **91.22%**;
+  the opt-in `RTP96_WEIGHTS` preset (paytable unchanged) = **96.0328%** theory /
+  **95.99%** measured (2M spins, theory in CI). Default game untouched. See ADR-0010.
+
+- **The Hold & Win bonus never triggers _naturally_ in the demo config.** Coin is
+  ~5.6%/cell, so P(6+ of 9 cells) ≈ 0 → bonus RTP ≈ 0% under fair play. The demo's
+  bonus liveliness is the `DEMO.bonusChance` forced trigger, **not** fair math, so
+  base (line) RTP is the certified game RTP. A real-money build would raise the
+  coin weight / lower coin value and fold the bonus in via `monteCarloFullGame()`.
+
+- **Seed Monte-Carlo & statistical tests with mulberry32** (`test/helpers/`): a
+  fixed seed makes every statistic deterministic → no flaky CI. Drive code that
+  calls the global `Math.random` (`outcome.js`, `utils.weightedPick`) via
+  `withSeededRandom()` (a `vi.spyOn(Math,'random')` wrapper).
+
+- **Mutation testing proves the suite isn't vacuous.** `npm run mutation`
+  (`scripts/mutation-probe.mjs`, ported from the Drive `mutation_probe_2.py`)
+  injects faults into `wins.js`/`slotmath.js` in an isolated temp copy (working
+  tree never touched) and runs Vitest per mutant. Current score: **100% (10/10
+  killed)**. Standalone, not in `npm test`, so CI stays fast.
+
+- **No decimal.js needed** — slot payouts are integer multiplier × integer bet;
+  assert integer-exactness instead of adding a big-decimal dependency.
+
 - **Credit wins when determined, not after the animation.** `resolve()` in
   `src/main.js` now does `state.balance += win` _before_ `presentLineWins` /
   `celebrate` (same for the bonus). The rolling counter is cosmetic; the player's

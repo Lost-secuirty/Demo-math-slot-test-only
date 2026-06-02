@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "mutation": "node scripts/mutation-probe.mjs",
     "audit": "node scripts/audit-drift.mjs"
   },
   "dependencies": {

@@ -190,3 +190,24 @@ export const THEMES = {
   },
 };
 export const THEME_NAMES = Object.keys(THEMES);
+
+// ---- Certified RTP preset (see docs/PAR-SHEET.md + docs/adr/0010) ----
+// The default game above is a deliberately generous show-piece demo: its
+// base (line) RTP is ~91.2% and it leans on DEMO nudges for liveliness.
+// This preset retunes ONLY the virtual-reel weights (the primary RTP
+// lever — paytable unchanged) so the base game certifies to a real ~96%
+// RTP, the regulated-online-slot target. Verified by the math harness:
+// theoretical 96.0328% (exact enumeration) and Monte-Carlo 95.99% / 2M
+// spins (theory inside the 95% CI). Apply with:
+//   slotmath.buildModel({ weights: RTP96_WEIGHTS })
+export const RTP96_WEIGHTS = {
+  cherry: 26,
+  lemon: 24,
+  plum: 22,
+  watermelon: 21,
+  bell: 11,
+  bar: 7,
+  seven: 5,
+  coin: 6,
+};
+export const RTP96_TARGET = 0.96;
