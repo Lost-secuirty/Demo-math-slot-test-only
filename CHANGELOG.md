@@ -8,6 +8,31 @@ this project is a demo and is not formally versioned.
 
 ### Added
 
+- **Drift-audit code-bloat / complexity gate** (`scripts/audit-drift.mjs`):
+  flags deep nesting (src lines indented past ~8 levels) and large net `src/`
+  growth without tests, and always prints the `src/` net line delta. A
+  deterministic proxy for the cyclomatic/cognitive-complexity gate (full AST
+  version lives in testing-kits `core/complexity`), motivated by the Sonar
+  finding that AI code bloats/over-nests even when it passes tests.
+
+### Changed
+
+- **Retuned the shipped game to a genuine ~96% TOTAL RTP** (base lines + Hold &
+  Win), the way a regulated hold-and-win slot is certified (ADR-0011). The
+  feature is now the RTP engine: coins land ~25%/cell so 6+ trigger naturally
+  ~1 in 100 spins; base game ~45.7%, feature ~50.3%, **total ~96.0%** (5 seeds ×
+  20M: mean 96.008%; deterministic 12M pin 96.08%). GRAND 1000×→500×, leaner
+  feature economy, rarer full-board fill.
+- **Removed the demo "nudges."** `outcome.js` is now pure RNG — every cell is a
+  weighted draw paid strictly by the paytable, so the experienced RTP equals the
+  certified RTP. Feature odds (`BONUS.jackpotOdds`, `BONUS.respinLandChance`) are
+  centralized in `config.js` and shared by the live feature and the math model.
+- Replaced the opt-in `RTP96_WEIGHTS` preset with a single `RTP_TARGET = 0.96`;
+  `test/rtp-target.test.js` now certifies the shipped game's TOTAL (12M-spin
+  Monte-Carlo) and `monteCarloFullGame()` reports a `maxWin`.
+
+### Added
+
 - **The slot** — "Coins: Hold & Win", a Playson-style 3×3 PixiJS v8 (WebGL) slot:
   procedural glossy symbols, deterministic motion-blurred reels, 5 paylines,
   line-win celebrations (glow / particles / shake / rolling count-up), the Hold &

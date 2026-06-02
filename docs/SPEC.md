@@ -26,14 +26,25 @@ bar, seven`, plus the `coin` bonus symbol. (`src/config.js: SYMBOLS`.)
 - 3-of-a-kind on a line pays `PAYTABLE[symbol] × bet`. Coins never pay lines.
 - Paytable (× bet): cherry 4, lemon 5, plum 6, watermelon 10, bell 20, bar 40,
   seven 100.
+- **Pure RNG, no nudges:** each of the 9 cells is an independent weighted draw
+  (`src/outcome.js`) paid strictly by the paytable, so the played return equals
+  the certified math.
 
 ## 4. Hold & Win bonus (`src/holdAndWin.js`)
 
-- **Trigger:** 6+ `coin` symbols on the board.
+- **Trigger:** 6+ `coin` symbols on the board. Coins land ~25%/cell, so this
+  fires naturally ~1 in 100 spins — the feature is the RTP engine.
 - Coins lock; remaining cells respin. Respins reset to **3** whenever a new coin
   lands. Each coin holds a cash value or a MINI/MINOR/MAJOR jackpot.
 - Filling all 9 cells awards the **GRAND**. Jackpots (× bet): MINI 20, MINOR 50,
-  MAJOR 200, GRAND 1000.
+  MAJOR 200, GRAND 500.
+
+## 4a. Certified RTP
+
+- **TOTAL RTP ≈ 96%** (base lines ~45.7% + Hold & Win feature ~50.3%), the way a
+  regulated hold-and-win slot is certified. Base is exact (enumeration); the
+  feature is measured by seeded Monte-Carlo. Full method + figures:
+  `docs/PAR-SHEET.md`; rationale: `docs/adr/0011`.
 
 ## 5. Celebrations & feedback
 
@@ -51,8 +62,8 @@ bar, seven`, plus the `coin` bonus symbol. (`src/config.js: SYMBOLS`.)
 ## 7. Debug / tuning
 
 - `?debug=1` or backtick → lil-gui panel: force WIN/BIG/MEGA/EPIC/BONUS, live
-  sliders (weights, spin feel, slow-mo, odds, quality, balance/bet), theme
-  switcher, FPS meter. Off in normal play.
+  sliders (weights, spin feel, slow-mo, quality, balance/bet), theme switcher,
+  FPS meter. Off in normal play.
 - All numbers live in `src/config.js`.
 
 ## 8. Non-goals

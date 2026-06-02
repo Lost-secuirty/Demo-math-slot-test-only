@@ -7,7 +7,8 @@ A flashy, **buttery-smooth** Playson-style 3×3 slot machine, built with **PixiJ
 - **3×3 reels** with weighted strips, staggered stops, and per-reel **motion blur**.
 - **Glossy classic-fruit symbols** (cherries, lemon, plum, watermelon, bell, BAR, lucky 7) plus the gold **coin** bonus symbol — all drawn procedurally (no image assets, crisp at any resolution).
 - **Line wins**: glowing cell highlights, particle bursts, screen shake, and a rolling WIN count-up with BIG / MEGA / EPIC banners.
-- **Hold & Win bonus**: land 6+ coins → coins lock, 3 respins (reset on every new coin), cash values + **MINI / MINOR / MAJOR** jackpots, and the **GRAND** for filling all 9.
+- **Hold & Win bonus**: land 6+ coins → coins lock, 3 respins (reset on every new coin), cash values + **MINI / MINOR / MAJOR** jackpots, and the **GRAND** for filling all 9. It's the RTP engine — the feature, not the base game, carries most of the payback.
+- **Certified ~96% TOTAL RTP**: pure RNG, no nudges — every cell is a weighted draw and pays strictly by the paytable, so the played return equals the certified math. Verified end-to-end by an in-repo lab harness (see [`docs/PAR-SHEET.md`](docs/PAR-SHEET.md)).
 - **Auto-spin + attract mode**: hands-free spinning that auto-starts after idle — perfect to leave running on a screen.
 - **Procedural WebAudio SFX**: spin whir, reel clicks, win chimes, coin dings, jackpot fanfare — synthesized at runtime, no audio files. Toggle with the SOUND button.
 
@@ -26,7 +27,7 @@ press the **backtick (`` ` ``)** key. You get:
 
 - an **FPS / ms** meter (top-left), and
 - a tweak panel with buttons to **Force WIN / BIG / MEGA / EPIC / BONUS** on demand,
-  plus live sliders for symbol weights, spin speed, slow-mo, odds, particle/glow/shake
+  plus live sliders for symbol weights, spin speed, slow-mo, particle/glow/shake
   quality, balance/bet, and a **theme switcher**.
 
 So you can trigger and inspect every visual state instantly instead of waiting on RNG.
@@ -47,9 +48,10 @@ npm run preview  # serve the build locally
 
 ## Tuning
 
-Everything lives in [`src/config.js`](src/config.js): palette, symbols, weights, paytable,
-paylines, jackpots, bet levels, spin timing, demo win/bonus frequency, and a
-`QUALITY` block to trade visuals ↔ performance.
+Everything lives in [`src/config.js`](src/config.js): palette, symbols, reel-strip weights,
+paytable, paylines, jackpots, the Hold & Win feature economy (`BONUS`), bet levels,
+spin timing, and a `QUALITY` block to trade visuals ↔ performance. Retune a number and
+re-certify with `npm test` / the `slotmath.js` harness (see [`docs/PAR-SHEET.md`](docs/PAR-SHEET.md)).
 
 ## Project layout
 
@@ -59,7 +61,7 @@ paylines, jackpots, bet levels, spin timing, demo win/bonus frequency, and a
 | `src/reels.js`      | Reel engine (deterministic strip-overwrite + motion blur) |
 | `src/symbols.js`    | Procedural glossy symbol textures                         |
 | `src/wins.js`       | Payline evaluation                                        |
-| `src/outcome.js`    | Weighted spin-result generator (with demo nudges)         |
+| `src/outcome.js`    | Pure-RNG spin-result generator (weighted draw, no nudges) |
 | `src/holdAndWin.js` | The Hold & Win bonus showpiece                            |
 | `src/effects.js`    | Particle bursts, glow pulses, screen shake                |
 | `src/ui.js`         | HUD: balance, bet, SPIN/AUTO/SOUND, jackpot ladder        |

@@ -24,6 +24,11 @@ pass adds semantic "does this claim match the code's meaning" judgement.
 - **Rule violations:** added `eslint-disable`, skipped/`.only` tests, new
   `TODO/HACK`, stray `console.log`/`debugger` in `src/`.
 - **Sensitive paths:** `.github/`, `.claude/`, `package.json`, `vite.config.js`.
+- **Code bloat / complexity:** deep nesting added (src lines indented past ~8
+  levels) and large net `src/` growth with no test change — a deterministic,
+  language-agnostic proxy for the cyclomatic/cognitive-complexity gate (full
+  AST version: testing-kits `core/complexity`). The report always prints the
+  `src/` net line delta so bloat is visible at a glance.
 - **Documentation drift:** `src/` changed but `docs/LEARNINGS.md` not updated.
 - **Unlogged changes:** files not named in any commit message or PR body.
 - **Scope creep / phantom claims** (semantic, in-session).

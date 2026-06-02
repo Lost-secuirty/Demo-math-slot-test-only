@@ -7,7 +7,7 @@
 
 Reels must (a) look like real spinning reels with motion blur and a satisfying
 stop, and (b) land a **predetermined** outcome so wins/bonuses can be computed
-and forced (debug panel, demo nudges, tests). Naive "spin then read whatever
+and forced (debug panel, tests). Naive "spin then read whatever
 random lands" can't guarantee a target grid.
 
 ## Decision
@@ -22,7 +22,8 @@ with reel speed via a `BlurFilter`. See `src/reels.js`.
 
 - Outcomes are fully controllable and testable; the visual is decoupled from the
   math (RNG/paytable live in `outcome.js`/`wins.js`).
-- Forcing a result (debug "Force EPIC/BONUS", demo win nudges) is trivial.
+- Forcing a result (debug "Force EPIC/BONUS") is trivial; normal play stays pure
+  RNG (no nudges — see ADR-0011).
 - Cost: the strip bookkeeping is subtle — covered by unit tests + verify.mjs.
 
 ## Alternatives considered

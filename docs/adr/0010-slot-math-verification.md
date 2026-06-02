@@ -1,6 +1,8 @@
 # 0010. Slot-math verification harness + certified RTP preset
 
-- **Status:** Accepted
+- **Status:** Accepted (the `RTP96_WEIGHTS` preset is **superseded by ADR-0011**,
+  which retunes the _default_ game to a genuine 96% TOTAL RTP; the harness itself
+  stands)
 - **Date:** 2026-06-02
 
 ## Context

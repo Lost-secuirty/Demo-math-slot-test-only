@@ -11,13 +11,15 @@ import { PAYTABLE, PAYLINES } from '../src/config.js';
 
 // Ported from the Drive Python suite (slot_machine_v2_weighted.py:
 // theoretical_rtp / monte_carlo) — the PAR-sheet + convergence checks a
-// certification lab runs. Golden figures are for the live demo config.
+// certification lab runs. Golden figures are for the live (shipped) config:
+// a lean base game (~45.69%) whose Hold & Win feature carries the rest of the
+// certified ~96% TOTAL (see test/rtp-target.test.js + docs/PAR-SHEET.md).
 
 describe('theoreticalRtp (exact PAR-sheet math)', () => {
   const th = theoreticalRtp(defaultModel());
 
-  it('reports the demo base RTP (~91.22%) and a positive house edge', () => {
-    expect(th.lineRtp).toBeCloseTo(0.9122, 3);
+  it('reports the lean base (line) RTP (~45.69%) and a positive house edge', () => {
+    expect(th.lineRtp).toBeCloseTo(0.45689, 4);
     expect(th.houseEdge).toBeGreaterThan(0);
   });
 
@@ -36,15 +38,15 @@ describe('theoreticalRtp (exact PAR-sheet math)', () => {
     expect(th.perLineRtp).toBeCloseTo(ev, 12);
   });
 
-  it('jackpot odds match three sevens on a line (~1 in 9042)', () => {
+  it('jackpot odds match three sevens on a line (~1 in 18053)', () => {
     const { p } = symbolProbabilities(defaultModel().weights);
     expect(th.jackpotProb).toBeCloseTo(p.seven ** 3, 12);
-    expect(Math.round(th.jackpotOneIn)).toBe(9042);
+    expect(Math.round(th.jackpotOneIn)).toBe(18053);
   });
 
-  it('records hit frequency and volatility (SD) for the demo', () => {
-    expect(th.hitFrequencyPerLine).toBeCloseTo(0.0261, 4);
-    expect(th.sdPerLine).toBeCloseTo(1.713, 3);
+  it('records hit frequency and volatility (SD) for the base game', () => {
+    expect(th.hitFrequencyPerLine).toBeCloseTo(0.0131, 4);
+    expect(th.sdPerLine).toBeCloseTo(1.216, 3);
   });
 });
 
@@ -84,12 +86,14 @@ describe('parSheet', () => {
     const th = theoreticalRtp(defaultModel());
     expect(par.baseRtp).toBeCloseTo(th.lineRtp, 12);
     expect(par.houseEdge).toBeCloseTo(1 - par.baseRtp, 12);
-    expect(par.virtualStops).toBe(125);
+    expect(par.virtualStops).toBe(3148);
   });
 
-  it('an alternate model (RTP96 weights) raises RTP above the demo', () => {
-    const demo = parSheet(defaultModel()).baseRtp;
-    const tuned = parSheet(buildModel({ weights: defaultModel().weights })).baseRtp;
-    expect(tuned).toBeCloseTo(demo, 12); // same weights -> same RTP (sanity)
+  it('a weight override changes the base RTP (model is config-driven)', () => {
+    const shipped = parSheet(defaultModel()).baseRtp;
+    const moreSevens = parSheet(
+      buildModel({ weights: { ...defaultModel().weights, seven: 240 } }),
+    ).baseRtp;
+    expect(moreSevens).toBeGreaterThan(shipped); // more top-payers -> higher base RTP
   });
 });

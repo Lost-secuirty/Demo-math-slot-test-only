@@ -16,20 +16,22 @@
 //                         use Monte-Carlo for hold-and-win features).
 //   - parSheet()        : a human-readable Probability/Accounting Report.
 //
-// The model defaults to the live `config.js`. Pass overrides (e.g. the
-// RTP96 preset) to certify an alternate tuning. This module is the math
+// The model defaults to the live `config.js`. Pass overrides to
+// `buildModel()` to certify an alternate tuning. This module is the math
 // model; it does not drive the renderer.
 // =====================================================================
 
 import { SYMBOLS, SYMBOL_WEIGHTS, PAYLINES, PAYTABLE, BONUS, JACKPOTS, ECONOMY } from './config.js';
 
-// Hold & Win coin-decision odds — lifted from holdAndWin.js `_decideCoin`
-// so the bonus Monte-Carlo matches the live feature exactly.
+// Hold & Win coin-decision odds — sourced from config (BONUS) so the bonus
+// Monte-Carlo matches the live feature (holdAndWin.js) exactly. The live
+// game and the certified model read the SAME numbers; there is no second
+// copy to drift out of sync.
 export const DEFAULT_BONUS_ODDS = {
-  major: 0.03, // roll < .03            -> MAJOR jackpot coin
-  minor: 0.09, // .03 <= roll < .09     -> MINOR
-  mini: 0.2, // .09 <= roll < .2        -> MINI
-  respinLandChance: 0.16, // per empty cell, per respin
+  major: BONUS.jackpotOdds.major, // roll < major          -> MAJOR jackpot coin
+  minor: BONUS.jackpotOdds.minor, // major <= roll < minor -> MINOR
+  mini: BONUS.jackpotOdds.mini, // minor <= roll < mini    -> MINI
+  respinLandChance: BONUS.respinLandChance, // per empty cell, per respin
 };
 
 // The default math model = the live game's config.
@@ -263,6 +265,7 @@ export function monteCarloFullGame(
   let lineWins = 0;
   let bonusTriggers = 0;
   let grands = 0;
+  let maxWin = 0; // largest single-spin payout seen (x bet) — a PAR-sheet figure
 
   for (let n = 0; n < spins; n++) {
     const flat = [];
@@ -299,6 +302,7 @@ export function monteCarloFullGame(
 
     const spinTotal = payout + bonusPayout;
     sumsq += spinTotal * spinTotal;
+    if (spinTotal > maxWin) maxWin = spinTotal;
   }
 
   const totalSum = lineSum + bonusSum;
@@ -315,6 +319,7 @@ export function monteCarloFullGame(
     bonusTriggerRate: bonusTriggers / spins,
     bonusTriggerOneIn: bonusTriggers > 0 ? spins / bonusTriggers : Infinity,
     grandRate: grands / spins,
+    maxWin,
     sd: Math.sqrt(variance),
     ci95Low: mean - 1.96 * se,
     ci95High: mean + 1.96 * se,

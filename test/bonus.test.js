@@ -25,33 +25,34 @@ const scripted = (values) => {
 
 describe('decideCoin', () => {
   it('returns the right jackpot tier / cash value for boundary rolls', () => {
-    expect(decideCoin(scripted([0.01]), defaultModel())).toEqual({
+    // jackpot odds (cumulative): major < .003, minor < .015, mini < .055
+    expect(decideCoin(scripted([0.001]), defaultModel())).toEqual({
       jackpot: 'MAJOR',
       amount: JACKPOTS.MAJOR.mult,
     });
-    expect(decideCoin(scripted([0.05]), defaultModel())).toEqual({
+    expect(decideCoin(scripted([0.01]), defaultModel())).toEqual({
       jackpot: 'MINOR',
       amount: JACKPOTS.MINOR.mult,
     });
-    expect(decideCoin(scripted([0.15]), defaultModel())).toEqual({
+    expect(decideCoin(scripted([0.03]), defaultModel())).toEqual({
       jackpot: 'MINI',
       amount: JACKPOTS.MINI.mult,
     });
-    // roll >= .2 -> weighted cash value; second draw 0 picks the first value
+    // roll >= .055 -> weighted cash value; second draw 0 picks the first value
     expect(decideCoin(scripted([0.5, 0]), defaultModel())).toEqual({
       jackpot: null,
       amount: BONUS.coinValues[0],
     });
   });
 
-  it('average coin value matches the analytic expected value (~15.6x)', () => {
+  it('average coin value matches the analytic expected value (~5.79x)', () => {
     const model = defaultModel();
     const rng = mulberry32(2026);
     const n = 200_000;
     let sum = 0;
     for (let i = 0; i < n; i++) sum += decideCoin(rng, model).amount;
-    // EV = .03*200 + .06*50 + .11*20 + .80*mean(cashWeighted=5.5) = 15.6
-    expect(Math.abs(sum / n - 15.6)).toBeLessThan(0.3);
+    // EV = .003*200 + .012*50 + .04*20 + .945*mean(cashWeighted=4.01) = 5.79
+    expect(Math.abs(sum / n - 5.79)).toBeLessThan(0.2);
   });
 
   it('cash-value distribution matches the coin-value weights', () => {
@@ -105,10 +106,13 @@ describe('simulateBonus (open -> resolve ledger)', () => {
   });
 });
 
-describe('natural bonus trigger rate (demo config)', () => {
-  it('is vanishingly rare without the DEMO nudges (lives off forced triggers)', () => {
-    const fg = monteCarloFullGame(defaultModel(), { seed: 777, spins: 200_000 });
-    expect(fg.bonusTriggerRate).toBeLessThan(0.001);
-    expect(fg.bonusRtp).toBeLessThan(0.01);
+describe('natural bonus trigger rate (shipped config)', () => {
+  it('triggers naturally ~1 in 100 spins and the feature drives the RTP', () => {
+    // No nudges: the bonus fires purely from the RNG (coins ~25%/cell), and it
+    // carries the majority of the certified ~96% total RTP.
+    const fg = monteCarloFullGame(defaultModel(), { seed: 777, spins: 1_000_000 });
+    expect(fg.bonusTriggerRate).toBeGreaterThan(0.007); // ~1 in 100
+    expect(fg.bonusTriggerRate).toBeLessThan(0.014);
+    expect(fg.bonusRtp).toBeGreaterThan(0.4); // the feature is the RTP engine
   });
 });

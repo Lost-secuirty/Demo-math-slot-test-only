@@ -9,7 +9,6 @@ import GUI from 'lil-gui';
 import Stats from 'stats.js';
 import {
   SPIN,
-  DEMO,
   QUALITY,
   BIGWIN,
   ECONOMY,
@@ -67,20 +66,15 @@ function build(api) {
   fS.add(SPIN, 'minSpinMs', 200, 3000, 50).name('min spin ms');
   fS.add(TIME, 'scale', 0.1, 1, 0.05).name('⏱ slow-mo');
 
-  // ===== Odds =====
-  const fO = gui.addFolder('Odds');
-  fO.add(DEMO, 'bonusChance', 0, 1, 0.01).name('bonus chance');
-  fO.add(DEMO, 'winChance', 0, 1, 0.01).name('win chance');
-
   // ===== Big-win thresholds (x bet) =====
   const fB = gui.addFolder('Big-win thresholds');
   fB.add(BIGWIN, 'big', 1, 200, 1);
   fB.add(BIGWIN, 'mega', 1, 400, 1);
   fB.add(BIGWIN, 'epic', 1, 1000, 5);
 
-  // ===== Symbol weights =====
+  // ===== Symbol weights (virtual reel-strip stops) =====
   const fW = gui.addFolder('Symbol weights');
-  for (const id of Object.keys(SYMBOL_WEIGHTS)) fW.add(SYMBOL_WEIGHTS, id, 0, 40, 1);
+  for (const id of Object.keys(SYMBOL_WEIGHTS)) fW.add(SYMBOL_WEIGHTS, id, 0, 1000, 5);
 
   // ===== Quality =====
   const fQ = gui.addFolder('Quality');
