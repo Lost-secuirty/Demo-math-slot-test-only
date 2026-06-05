@@ -8,5 +8,18 @@ audit-report.md
 .audit/
 # local agent observability log (hook events)
 .claude/logs/
-# personal journal — private, never committed to this public repo
-PERSONAL_JOURNAL.md
+
+# Secrets / credential carriers — never commit
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.keystore
+id_rsa*
+credentials*
+*.tfvars
+
+# Personal / Drive tier — must never reach GitHub (covers PERSONAL_JOURNAL.md)
+PERSONAL_JOURNAL*
+private/

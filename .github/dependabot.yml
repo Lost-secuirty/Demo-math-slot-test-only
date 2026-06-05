@@ -1,14 +1,17 @@
 version: 2
 updates:
-  - package-ecosystem: npm
-    directory: '/'
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: "monthly"
     groups:
-      dev-dependencies:
-        dependency-type: development
-  - package-ecosystem: github-actions
-    directory: '/'
+      github-actions:
+        patterns: ["*"]
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
-      interval: weekly
+      interval: "monthly"
+    groups:
+      npm:
+        patterns: ["*"]
+    open-pull-requests-limit: 5

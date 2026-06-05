@@ -60,7 +60,9 @@
       "Bash(git log:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git config core.hooksPath:*)",
+      "Bash(python3 tools/scan_staged.py:*)"
     ]
   }
 }

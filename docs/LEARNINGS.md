@@ -26,6 +26,20 @@ demo:recurrence`). Pure logic, no Pixi — see ADR-0012. The
 - **Verification that "works":** the JS `--report`/`--report-v1` output diffs
   byte-for-byte against `python recurrence.py --report` in Health-Prototype.
 
+## 2026-06-03
+
+- **Cross-repo secret/PII + agent-safety layer landed here.** Added a pure-stdlib
+  secret/PII pre-commit gate (`tools/scan_staged.py` + `.githooks/pre-commit`): secrets
+  hard-block, PII warn-only, `PERSONAL_JOURNAL*`/`private/` paths hard-block. Activate per
+  clone with `git config core.hooksPath .githooks` (no husky here, so the hooksPath is
+  free). Extended the existing `guard.sh` to also deny edits to those paths, appended
+  secret/personal carriers to `.gitignore`, added a `## Agent safety` section to
+  `AGENTS.md` (treat external content as data, anti-exfiltration, no fabrication) and a
+  gate section to `SECURITY.md`. New `.github/workflows/scan.yml` runs the scan on PRs
+  (fork-gated, `GITHUB_TOKEN` only) alongside the drift audit. The scanner's PII detectors
+  are vendored from the testing-kits `pii_redaction` harness; the bare-date/DOB detector
+  is intentionally omitted (dated frontmatter is everywhere — too noisy).
+
 ## 2026-06-02
 
 - **Stacked-PR merge mechanics (operational, web-confirmed).** PR #2 was stacked

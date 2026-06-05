@@ -16,5 +16,17 @@ case "$file" in
     echo "Refusing to edit build output / dependencies (dist, node_modules)." >&2
     exit 2
     ;;
+  */PERSONAL_JOURNAL* | PERSONAL_JOURNAL*)
+    echo "Refusing to touch PERSONAL_JOURNAL* — sacred personal-tier file (Drive only)." >&2
+    exit 2
+    ;;
+  */private/* | private/*)
+    echo "Refusing to write under private/ — personal/Drive tier, not GitHub." >&2
+    exit 2
+    ;;
+  *.pem | *.key | *.p12 | *.keystore | .env | */.env | .env.* | */.env.*)
+    echo "Refusing to write secret/credential files (.env, *.key, *.pem, ...)." >&2
+    exit 2
+    ;;
 esac
 exit 0
