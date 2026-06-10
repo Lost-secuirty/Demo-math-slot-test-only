@@ -6,6 +6,38 @@ something.** Include the date and enough context to be useful later.
 
 ---
 
+## 2026-06-10
+
+- **Doc/CI currency pass (drift cleanup).** Fixed stale claims found by an audit:
+  `AGENTS.md` said "Vite 6" but the repo has been on Vite 8 since the Dependabot
+  major bump (`44bfd28`, 2026-06-02 — 6.4.2 → 8.0.16, no config changes needed);
+  `SECURITY.md` said Dependabot was "weekly" but `.github/dependabot.yml` is
+  monthly; `deploy.yml` still triggered on the long-deleted
+  `claude/fast-visual-demo-GV6wC` branch. Lesson: version/cadence claims in prose
+  rot silently — prefer pointing at the source file (`package.json`,
+  `dependabot.yml`) over restating numbers.
+- **CHANGELOG hygiene:** everything that sat in `[Unreleased]` had actually
+  shipped on 2026-06-02 (PRs #1/#2). Since the demo isn't versioned, released
+  sections are now dated by merge date; `[Unreleased]` is empty again.
+- **zizmor (`uvx zizmor .github/workflows/`) is a cheap, good workflow auditor.**
+  It found 2 high-confidence template injections (`${{ github.base_ref }}`
+  interpolated straight into `run:` in audit.yml/scan.yml — fixed by passing it
+  through `env:`), workflow-level `pages: write`/`id-token: write` in deploy.yml
+  (moved to job-level least privilege; note `actions/configure-pages` still needs
+  `pages: read` to probe enablement), and missing `persist-credentials: false` on
+  checkouts (added to read-only jobs; **intentionally NOT added in audit.yml**,
+  whose job pushes auto-fix commits and needs the persisted token — the one
+  remaining zizmor warning is accepted).
+- **Action pins were already current** — Dependabot's grouped github-actions PR
+  (#7) had moved checkout/setup-node to v6-era SHAs ahead of GitHub's 2026-06-16
+  Node 24 runner default. Verified the pinned SHAs against the real tags with
+  `git ls-remote ... refs/tags/vX.Y.Z` — note annotated tags need the peeled
+  `^{}` SHA (checkout v6.0.3 peels to `df4cb1c0…`), while setup-node v6.4.0 is a
+  lightweight tag (no `^{}` line, the tag SHA is the commit).
+- **2026 GitHub convention for SECURITY.md:** point reporters at the repo
+  Security tab → "Report a vulnerability" (private vulnerability reporting),
+  explicitly say "no public issues," and state a response window.
+
 ## 2026-06-05
 
 - **Ported the Health-Prototype recurrence engine** into `src/recurrence.js`
