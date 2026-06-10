@@ -10,6 +10,9 @@ tests (`test/slotmath.test.js`, `test/rtp-target.test.js`, `test/rng-stats.test.
 > is nonetheless built to a real regulated-online-slot spec (a single certified
 > **TOTAL** RTP of ~96%), so the pipeline mirrors how a live game is signed off.
 
+**Last certified:** 2026-06-02 (ADR-0011 retune, PR #2) — deterministic pin:
+seed 2026, 12M spins → **96.08%** total; 5 seeds × 20M spins → mean **96.008%**.
+
 ## The one number that matters: TOTAL RTP ≈ 96%
 
 This is a **hold-and-win** game, so RTP is certified as a single TOTAL across

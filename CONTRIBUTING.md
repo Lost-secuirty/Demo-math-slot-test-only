@@ -35,6 +35,8 @@ node verify.mjs
 - Record significant decisions as an **ADR** (`docs/adr/`), gotchas in
   **`docs/LEARNINGS.md`**, and behavior changes in **`docs/SPEC.md`**.
 - The **drift-audit** workflow comments on every PR; address high-severity flags.
+- AI agents: prefer the predefined subagent roles in `.claude/agents/`
+  (auditor, explorer, planner) over ad-hoc prompts.
 
 ## Working Agreement
 

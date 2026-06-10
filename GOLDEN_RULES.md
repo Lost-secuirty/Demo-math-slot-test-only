@@ -59,6 +59,8 @@ The distilled cheat-sheet for working in this repo — a hybrid of this repo's
     (`package-lock.json`, `dist/`, `node_modules/`); change `.claude/` settings
     and hooks only when explicitly asked; assets are procedural (no binary
     art/audio); never add real-money / wagering / payment. _(AGENTS · Boundaries)_
+    - Never hand-edit `package-lock.json`; let npm manage it (`npm install` /
+      `npm ci` regenerate it correctly).
 14. **Git hygiene** — work on a feature branch, never straight to `main`;
     conventional, imperative commits with a short "why"; open a **draft PR**;
     keep the tree clean and pushed. _(AGENTS · Git workflow)_

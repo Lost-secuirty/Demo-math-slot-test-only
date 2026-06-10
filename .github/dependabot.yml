@@ -1,4 +1,6 @@
 version: 2
+# Monthly cadence: this is a low-churn demo repo — grouped monthly PRs keep
+# dependencies current without weekly review noise (npm audit is checked too).
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"

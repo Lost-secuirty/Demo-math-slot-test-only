@@ -45,4 +45,6 @@
 
 ## Notes for reviewers / auditor
 
-<!-- Anything the drift audit should know (intentional sensitive changes, etc.) -->
+<!-- Anything the drift audit should know (intentional sensitive changes, etc.)
+     Hit a workaround or gotcha while building this? Record it in
+     docs/LEARNINGS.md (dated, newest at top) rather than only here. -->
