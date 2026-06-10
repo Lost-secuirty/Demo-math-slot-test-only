@@ -34,6 +34,8 @@ jobs:
       - name: Headless smoke + screenshots
         run: |
           npm run preview -- --host 127.0.0.1 --port 4173 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
           npx --yes wait-on http://127.0.0.1:4173 --timeout 60000
           npm run smoke:browser
       - name: Upload smoke artifacts
