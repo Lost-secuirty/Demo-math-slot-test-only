@@ -15,6 +15,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  attestations: write
 
 concurrency:
   group: pages
@@ -40,6 +41,11 @@ jobs:
         with:
           name: slot-build
           path: dist
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@619dbb2e03e0189af0c55118e7d3c5e129e99726 # v2.0.0
+        with:
+          subject-path: dist/**
 
       # Pages path — tolerated if Pages isn't enabled yet.
       - name: Configure Pages

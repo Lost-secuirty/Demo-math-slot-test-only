@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { mkdir } from 'node:fs/promises';
 
 // Render + behavior smoke test for the built app.
 //
@@ -10,12 +11,16 @@ import { chromium } from 'playwright';
 // covered deterministically by the Vitest unit tests (test/wins.test.js); the
 // animated bonus is merely observed, not gated. See docs/LEARNINGS.md.
 
-const url = 'http://localhost:4173/?debug=1';
+const url = process.env.SMOKE_URL || 'http://localhost:4173/?debug=1';
+const artifactDir = 'artifacts/playwright';
+await mkdir(artifactDir, { recursive: true });
+
 const browser = await chromium.launch();
 const page = await browser.newPage({
   viewport: { width: 800, height: 1000 },
   deviceScaleFactor: 1,
 });
+await page.context().tracing.start({ screenshots: true, snapshots: true });
 
 const errors = [];
 page.on('console', (m) => {
@@ -50,7 +55,7 @@ let keepAwake;
 if (has) {
   // Turn particles off — big bursts saturate this software-WebGL renderer.
   await page.evaluate(() => window.__slot.setQuality({ particlesPerBurst: 0, maxParticles: 0 }));
-  await page.screenshot({ path: 'shot-idle.png' });
+  await page.screenshot({ path: `${artifactDir}/shot-idle.png` });
 
   // Stop idle "attract" auto-spin from racing our assertions.
   keepAwake = setInterval(
@@ -68,7 +73,7 @@ if (has) {
     ];
     window.__slot.doSpin();
   });
-  await page.screenshot({ path: 'shot-spinning.png' });
+  await page.screenshot({ path: `${artifactDir}/shot-spinning.png` });
   check(
     'no-win spin settles',
     await waitFn(() => !window.__slot.state.busy && !window.__slot.reels.spinning),
@@ -86,12 +91,12 @@ if (has) {
     after = await page.evaluate(() => window.__slot.state.balance);
   }
   check('forced win credits balance', after > before, `${before} -> ${after}`);
-  await page.screenshot({ path: 'shot-win.png' });
+  await page.screenshot({ path: `${artifactDir}/shot-win.png` });
 
   // theme switch applies without error
   await page.evaluate(() => window.__slot.applyTheme('neon'));
   await page.waitForTimeout(300);
-  await page.screenshot({ path: 'shot-theme-neon.png' });
+  await page.screenshot({ path: `${artifactDir}/shot-theme-neon.png` });
   await page.evaluate(() => window.__slot.applyTheme('classic'));
 
   // bonus: observe only (its animation may be too slow to finish headless).
@@ -101,7 +106,7 @@ if (has) {
   ]);
   if (typeof bonusWin === 'number') note(`bonus awarded ${bonusWin}`);
   else note('bonus animation too slow to verify in headless (observed, not gated)');
-  await page.screenshot({ path: 'shot-bonus.png' });
+  await page.screenshot({ path: `${artifactDir}/shot-bonus.png` });
 }
 
 if (keepAwake) clearInterval(keepAwake);
@@ -109,5 +114,6 @@ check('no console errors', errors.length === 0, errors.slice(0, 5).join(' | '));
 
 const allOk = checks.every((c) => c.ok);
 console.log(`\n${allOk ? 'PASS' : 'FAIL'} — ${checks.filter((c) => c.ok).length}/${checks.length}`);
+await page.context().tracing.stop({ path: `${artifactDir}/trace.zip` });
 await browser.close();
 process.exit(allOk ? 0 : 1);

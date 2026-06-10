@@ -7,6 +7,10 @@ on:
     branches: [main, 'claude/**']
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -22,4 +26,24 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - run: npm run test:proof
+      - run: npm run mutation
       - run: npm run build
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Headless smoke + screenshots
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 &
+          npx --yes wait-on http://127.0.0.1:4173 --timeout 60000
+          npm run smoke:browser
+      - name: Upload smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: replit-code-smoke
+          path: artifacts/playwright
+      - name: Upload build artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: replit-code-dist
+          path: dist
