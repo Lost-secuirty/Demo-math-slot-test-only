@@ -12,6 +12,20 @@
 
 -
 
+## AI assistance
+
+- [ ] No AI-assisted code
+- [ ] AI-assisted code present
+
+## Slot/math risk
+
+- [ ] Docs only
+- [ ] UI/render behavior
+- [ ] Slot math, RTP, RNG, or weights
+- [ ] State machine or debug controls
+- [ ] Recurrence module or provenance behavior
+- [ ] Dependency, build, or CI
+
 ## Testing
 
 <!-- How was this verified? -->
@@ -20,6 +34,8 @@
 - [ ] `npm run lint` clean
 - [ ] `npm run build` succeeds
 - [ ] Smoke test (`node verify.mjs`) — if behavior/render changed
+- [ ] RTP/math changes have proof tests
+- [ ] Reviewer checked silent-failure risk
 
 ## Records
 
