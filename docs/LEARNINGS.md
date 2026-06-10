@@ -8,6 +8,23 @@ something.** Include the date and enough context to be useful later.
 
 ## 2026-06-10
 
+- **Research fold-in (testing/gaming-math) → metamorphic invariants (ADR-0013).**
+  Four Gemini "deep dive" docs were reviewed for useful additions. Three of them
+  (AI-dev trustworthiness, solo-repo security, advanced testing) cite
+  **unverifiable, future-dated sources** (`arXiv:2603.*`, "ICLR 2026", tools like
+  *ClaimCheck/Lore*) — treated as **RESEARCH_ONLY**, judged by concept not
+  citation. The gaming-math doc's sources are real (GLI-19, NIST SP 800-22,
+  `scipy.stats.binomtest`). **The research mostly VALIDATED what this repo already
+  does** — so a future session should NOT "rediscover" it: seeded `mulberry32`;
+  **no modulo bias** (the weighted pick is a cumulative-CDF walk, `slotmath.js`
+  `pickSymbol`, not `% N`); chi-square + KS + runs + serial-correlation battery
+  (`rng-stats.test.js`); RTP as a deterministic pin **plus** a CI band
+  (`rtp-target.test.js`), not a magic number; an exact-binomial trigger test;
+  property/fuzz tests; a mutation probe. The one genuine gap was **metamorphic
+  relations** → added `test/metamorphic.test.js` (uniform weight-scaling
+  invariance + payline-reorder invariance). Bet-scaling invariance was NOT added:
+  RTP is bet-invariant by construction (`model.bet` is never used in the sim) and
+  payout linearity is already covered in `property.test.js`.
 - **Drift audit of PR #12 (in-session auditor):** deterministic pass clean
   (lint/build green, `src/` net +0, 79/79 tests); claims verified against the
   ground truth (`44bfd28` lockfile: vite 6.4.2→8.0.16, playwright
