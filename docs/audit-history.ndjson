@@ -1,0 +1,2 @@
+{"ts":"2026-06-11T06:07:59.099Z","base":"161816ceae927b1686ad443b1d11f8700b2fc1fe","head":"593f706bf1c75a98e3cb4b8c194004bb3756e24e","pr":22,"findings":[{"id":"sensitive-paths","sev":"medium","conf":"high"},{"id":"unlogged-files","sev":"low","conf":"low"}],"srcNet":0,"autofixed":false}
+{"ts":"2026-06-11T06:11:03.360Z","base":"161816ceae927b1686ad443b1d11f8700b2fc1fe","head":"189f53c79e2469babac8277b79d9c193ee005bfe","pr":22,"findings":[{"id":"sensitive-paths","sev":"medium","conf":"high"},{"id":"unlogged-files","sev":"low","conf":"low"}],"srcNet":0,"autofixed":false}

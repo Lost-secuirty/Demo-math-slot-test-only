@@ -30,18 +30,19 @@ jobs:
           cache: npm
       - run: npm ci
 
-      - name: Run drift audit (with safe auto-fix)
+      - name: Run drift audit (with safe auto-fix + history)
         env:
           GITHUB_PR_BODY: ${{ github.event.pull_request.body }}
+          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }} # via env (same injection posture)
           BASE_REF: ${{ github.base_ref }} # via env, not inline, to avoid template injection
-        run: node scripts/audit-drift.mjs --base "origin/${BASE_REF}" --head HEAD --fix --run-checks
+        run: node scripts/audit-drift.mjs --base "origin/${BASE_REF}" --head HEAD --fix --run-checks --history docs/audit-history.ndjson
 
-      - name: Commit & push auto-fixes (if any)
+      - name: Commit & push auto-fixes + history (if any)
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -am "audit: auto-fix (prettier + eslint --fix)"
+            git commit -am "audit: auto-fix + history"
             git push
           fi
 

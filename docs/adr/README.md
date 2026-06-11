@@ -25,3 +25,4 @@ To add one: copy `0000-template.md` to the next number, fill it in, set Status.
 | 0014 | Factual-wording policy (no cert/audit claims)    | Accepted |
 | 0015 | Model-driven N×M grid (explicit dimensions)      | Accepted |
 | 0016 | Feature-plugin registry (pure descriptors)       | Accepted |
+| 0017 | Self-improving audit loop (hard human gates)     | Accepted |

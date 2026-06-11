@@ -8,6 +8,26 @@ something.** Include the date and enough context to be useful later.
 
 ## 2026-06-11
 
+- **ADR-0017 — the audit loop got memory and a propose-only self-tuning path.**
+  Trigger: Scott caught a mid-task tactic change that lived only in agent
+  _thinking_ — never surfaced, lesson lost. Three additions, all gated: (1)
+  Working Agreement #8 + mandatory PR-body `## Deviations from plan` section,
+  enforced by the new `deviations-section` check (medium on purpose — strict
+  stays a logic gate; HTML comments stripped first so the untouched template
+  placeholder fails; check silently skipped when no body is available, so
+  local bodyless runs don't nag). (2) `docs/audit-history.ndjson` — CI appends
+  one line per audited head (stable check ids now on every finding), deduped
+  by head sha, persisted by the existing auto-fix commit (no retrigger loop);
+  `merge=union` via the new `.gitattributes`; the history file is exempted
+  from the `unlogged-files` heuristic or the loop would manufacture its own
+  findings forever. (3) `/audit-retro` — manual, propose-only meta-audit
+  (fire-rates, dead checks from `CHECK_IDS`, real-catch cross-ref vs this
+  log, deviation-compliance spot-checks; refuses to tune on <5 PRs). Pure
+  logic extracted to `scripts/audit-lib.mjs` + unit tests — the auditor
+  itself is finally under test. Gotcha for porters: in Actions
+  `GITHUB_PR_BODY` is SET even when the body is empty (check fires,
+  correctly); detect "body provided" via `'VAR' in process.env`, not
+  truthiness.
 - **Post-#20 verification + history repair.** Codex's hardening pass (#20) was
   verified clean: zero math files touched, 94/94 green, 12M-spin headline
   `0.96081525` exact `===`, lint/build green, main CI #90 success — and CI is
