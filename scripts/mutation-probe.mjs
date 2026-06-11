@@ -22,7 +22,8 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const REPO = process.cwd();
-const COPY = ['src', 'test', 'package.json', 'vitest.config.js'];
+// scripts/ is needed since test/auditLib.test.js imports scripts/audit-lib.mjs
+const COPY = ['src', 'test', 'scripts', 'package.json', 'vitest.config.js'];
 
 // Each mutation: a single targeted source edit that SHOULD break a test.
 const MUTATIONS = [
