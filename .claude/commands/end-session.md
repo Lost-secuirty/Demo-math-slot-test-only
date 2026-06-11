@@ -13,7 +13,7 @@ ship command — never self-initiate it; only run it when the operator says
   `audit:` commits don't retrigger CI — check the last code commit, and
   always check `npm run mutation`, not just `npm test`; CI gates on it).
 - Working branch vs `main`; orphaned/unmerged branches (`git for-each-ref`
-  + ahead/behind vs `main`); uncommitted work; any STATUS/docs open loops.
+  - ahead/behind vs `main`); uncommitted work; any STATUS/docs open loops.
 - A drift pass: stale claims, wrong numbers, source-of-truth conflicts,
   evidence-level overclaims (e.g. "CI green" claimed off a local run).
 

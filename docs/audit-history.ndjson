@@ -5,3 +5,4 @@
 {"ts":"2026-06-11T09:00:06.230Z","base":"02c8919a774ca4cc872c507e2ad157ff531b11ef","head":"361d0b366d5537b0b89430afbf606636d42cb0c4","pr":26,"findings":[],"srcNet":0,"autofixed":false}
 {"ts":"2026-06-11T09:30:23.939Z","base":"02c8919a774ca4cc872c507e2ad157ff531b11ef","head":"eccdd634dddda6bbb8e32b65d399da9f5a41419d","pr":26,"findings":[{"id":"learnings-distill-due","sev":"low","conf":"high"}],"srcNet":0,"autofixed":false}
 {"ts":"2026-06-11T09:56:20.336Z","base":"02c8919a774ca4cc872c507e2ad157ff531b11ef","head":"79b01f445a5b5346916e3c13ad62b528c94f87c4","pr":26,"findings":[{"id":"learnings-distill-due","sev":"low","conf":"high"}],"srcNet":0,"autofixed":false}
+{"ts":"2026-06-11T18:31:32.637Z","base":"02c8919a774ca4cc872c507e2ad157ff531b11ef","head":"609ee6ec433e15d64995852dffc532e36426d510","pr":26,"findings":[{"id":"sensitive-paths","sev":"medium","conf":"high"},{"id":"learnings-distill-due","sev":"low","conf":"high"}],"srcNet":0,"autofixed":true}
