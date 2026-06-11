@@ -10,8 +10,10 @@ import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import { GlowFilter } from 'pixi-filters';
 import { DESIGN, GRID, COLORS, BONUS, JACKPOTS } from './config.js';
 import { CELL } from './reels.js';
-import { tween, wait, Ease, weightedPick, randInt, fmt } from './utils.js';
+import { tween, wait, Ease, randInt, fmt } from './utils.js';
 import { audio } from './audio.js';
+import { play as playBonus } from './features/holdAndWin.js';
+import { defaultModel } from './slotmath.js';
 
 function txt(text, size, fill, weight = '900') {
   return new Text({
@@ -35,18 +37,6 @@ export class BonusGame {
     this.root = new Container();
     this.root.visible = false;
     this.root.zIndex = 80;
-  }
-
-  _decideCoin(bet) {
-    // small chance of a jackpot coin, otherwise a cash value. Odds come from
-    // config (BONUS.jackpotOdds) so this matches the math model.
-    const { major, minor, mini } = BONUS.jackpotOdds;
-    const roll = Math.random();
-    if (roll < major) return { jackpot: 'MAJOR', amount: JACKPOTS.MAJOR.mult * bet };
-    if (roll < minor) return { jackpot: 'MINOR', amount: JACKPOTS.MINOR.mult * bet };
-    if (roll < mini) return { jackpot: 'MINI', amount: JACKPOTS.MINI.mult * bet };
-    const v = weightedPick(BONUS.coinValues, BONUS.coinValueWeights);
-    return { jackpot: null, amount: v * bet };
   }
 
   _makeCell(reel, row) {
@@ -156,15 +146,22 @@ export class BonusGame {
     for (let reel = 0; reel < 3; reel++)
       for (let row = 0; row < 3; row++) cells[reel * 3 + row] = this._makeCell(reel, row);
 
-    const cellAt = (reel, row) => cells[reel * 3 + row];
-
     this.root.visible = true;
     audio.bonusTrigger();
     await wait(500);
 
-    // place triggering coins
-    for (const { reel, row } of triggerCoinCells) {
-      await this._landCoin(cellAt(reel, row), this._decideCoin(bet));
+    // Decide the whole round up front from the ONE shared feature sim
+    // (features/holdAndWin.js — the same logic the math harness uses), then
+    // replay its event stream as animation. Coin amounts come back in x-bet
+    // units, so multiply by the live bet for display.
+    const model = defaultModel();
+    const triggerIdx = triggerCoinCells.map(({ reel, row }) => reel * 3 + row);
+    const { events } = playBonus(triggerIdx, model, Math.random);
+    const withBet = (coin) => ({ jackpot: coin.jackpot, amount: coin.amount * bet });
+
+    // place triggering coins (events[0] is always the 'place' event)
+    for (const { idx, coin } of events[0].cells) {
+      await this._landCoin(cells[idx], withBet(coin));
       await wait(90);
     }
 
@@ -173,29 +170,21 @@ export class BonusGame {
 
     const emptyCells = () => cells.filter((c) => c.state === 'empty');
 
-    while (respins > 0 && emptyCells().length > 0) {
+    // replay each respin event: flicker the empties, land the coins the sim
+    // decided this respin, then show the respins-left it computed.
+    for (let e = 1; e < events.length; e++) {
+      const ev = events[e];
       await wait(350);
-      const empties = emptyCells();
-      await this._respinFlicker(empties);
+      await this._respinFlicker(emptyCells());
 
-      // decide new coins this respin (land chance from config -> matches model)
-      const landed = [];
-      for (const cell of empties) {
-        if (Math.random() < BONUS.respinLandChance) landed.push(cell);
+      for (const { idx, coin } of ev.landed) {
+        await this._landCoin(cells[idx], withBet(coin));
+        await wait(80);
       }
-
-      if (landed.length > 0) {
-        for (const cell of landed) {
-          await this._landCoin(cell, this._decideCoin(bet));
-          await wait(80);
-        }
-        respins = BONUS.respins; // reset on any new coin
-      } else {
-        respins--;
-      }
+      respins = ev.respinsLeft;
       respinText.text = `RESPINS  ${respins}`;
       respinText.scale.set(1.25);
-      await tween(180, (t, e) => respinText.scale.set(1.25 - 0.25 * e), Ease.outCubic);
+      await tween(180, (t, ease) => respinText.scale.set(1.25 - 0.25 * ease), Ease.outCubic);
     }
 
     // ----- COLLECT -----

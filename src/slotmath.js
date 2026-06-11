@@ -22,6 +22,7 @@
 // =====================================================================
 
 import { SYMBOLS, SYMBOL_WEIGHTS, PAYLINES, PAYTABLE, BONUS, JACKPOTS, ECONOMY } from './config.js';
+import { play as playBonus } from './features/holdAndWin.js';
 
 // Hold & Win coin-decision odds — sourced from config (BONUS) so the bonus
 // Monte-Carlo matches the live feature (holdAndWin.js) exactly. The live
@@ -201,48 +202,20 @@ export function monteCarloLine(model = defaultModel(), { seed = 12345, spins = 1
   };
 }
 
-// ---- Hold & Win coin decision (pure port of holdAndWin `_decideCoin`) --
-export function decideCoin(rng, model = defaultModel()) {
-  const { odds, jackpots, coinValues, coinValueWeights } = model.bonus;
-  const roll = rng();
-  if (roll < odds.major) return { jackpot: 'MAJOR', amount: jackpots.MAJOR };
-  if (roll < odds.minor) return { jackpot: 'MINOR', amount: jackpots.MINOR };
-  if (roll < odds.mini) return { jackpot: 'MINI', amount: jackpots.MINI };
-  // weighted cash value (x bet) — mirrors utils.weightedPick
-  const total = coinValueWeights.reduce((a, b) => a + b, 0);
-  let r = rng() * total;
-  for (let i = 0; i < coinValues.length; i++) {
-    r -= coinValueWeights[i];
-    if (r <= 0) return { jackpot: null, amount: coinValues[i] };
-  }
-  return { jackpot: null, amount: coinValues[coinValues.length - 1] };
-}
+// ---- Hold & Win feature: ONE pure source of truth -----------------------
+// decideCoin + the respin loop live in `features/holdAndWin.js` so the math
+// harness and the live renderer share identical logic (no copy to drift).
+// `decideCoin` is re-exported for the math API; `simulateBonus` keeps its
+// ledger-only return shape — the harness needs the payout, not the renderer
+// event stream that `play()` also produces.
+export { decideCoin } from './features/holdAndWin.js';
 
-// Simulate one Hold & Win round given the triggering coin cells.
-// Returns total payout (x bet) for the round. Pure: rng injected.
+// Simulate one Hold & Win round given the triggering coin cells. Pure: rng
+// injected. Delegates to the feature's play() (identical RNG draw order, so
+// the seeded RTP is unchanged) and drops the renderer event stream.
 export function simulateBonus(triggerCells, model, rng) {
-  const reels = model.paylines[0].length;
-  const rows = Math.max(...model.paylines.flat()) + 1;
-  const cellCount = reels * rows;
-  const coins = new Array(cellCount).fill(null);
-  for (const idx of triggerCells) coins[idx] = decideCoin(rng, model);
-
-  let respins = model.bonus.respins;
-  while (respins > 0 && coins.includes(null)) {
-    let landed = false;
-    for (let i = 0; i < cellCount; i++) {
-      if (coins[i] === null && rng() < model.bonus.odds.respinLandChance) {
-        coins[i] = decideCoin(rng, model);
-        landed = true;
-      }
-    }
-    respins = landed ? model.bonus.respins : respins - 1;
-  }
-
-  let total = coins.reduce((s, c) => s + (c ? c.amount : 0), 0);
-  const filledAll = !coins.includes(null);
-  if (filledAll) total += model.bonus.jackpots.GRAND;
-  return { total, filledAll, coinsCollected: coins.filter(Boolean).length };
+  const { total, filledAll, coinsCollected } = playBonus(triggerCells, model, rng);
+  return { total, filledAll, coinsCollected };
 }
 
 // ---- Monte-Carlo: full game (lines + Hold & Win bonus), seeded ---------

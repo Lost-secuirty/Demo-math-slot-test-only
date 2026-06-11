@@ -8,6 +8,26 @@ something.** Include the date and enough context to be useful later.
 
 ## 2026-06-11
 
+- **Phase 1 — Hold & Win feature de-duplicated into ONE pure source of truth.**
+  `decideCoin` + the respin loop existed verbatim in both `slotmath.js` (seeded
+  math) and `holdAndWin.js` (Pixi UI, via `_decideCoin` + an inline loop) — a
+  drift hazard. Extracted both into `src/features/holdAndWin.js` as a pure module
+  (no Pixi, rng injected): `decideCoin(rng, model)` and `play(triggerCells,
+model, rng)`. `play()` returns the round total (x bet) **and an event stream**
+  (`{type:'place',cells}` then one `{type:'respin',landed,respinsLeft}` per
+  respin) that the renderer **replays** instead of re-deciding — the load-bearing
+  "one event stream, two consumers" seam. `slotmath.js` now re-exports
+  `decideCoin` and keeps `simulateBonus` as a thin ledger-only wrapper over
+  `play()`; the Pixi `BonusGame.run()` builds `defaultModel()`, calls `play(...,
+Math.random)`, and animates the events (coin amounts x bet at render time).
+  **Behavior preserved:** the RNG draw order in `play()` is identical to the old
+  inline sim, so the 96.082% RTP pin and `bonus.test.js` seeded values are
+  byte-identical (84/84 green). Extra check: over 4000 seeded rounds `play()`'s
+  total == `simulateBonus`'s total and the event stream reconstructs that exact
+  total (no UI drift). **Gap:** the live Pixi render couldn't be smoke-tested here
+  — `npx playwright install chromium` is blocked by the container network policy,
+  so `verify.mjs` didn't run; the replay was validated by build + the event-total
+  reconstruction instead.
 - **Factual-wording sweep (ADR-0014) — no certification/lab claims anywhere.**
   This is a play-money portfolio demo; it cannot be certified, audited, or
   reviewed by any regulator/lab. Earlier wording across code comments, docs,
