@@ -114,6 +114,14 @@ npm run smoke:browser  # Playwright boot and console-error smoke
    agents that argue and rebut), time-boxed**, then report the findings. **Never
    act on the MoE/research conclusion automatically — the final decision is ALWAYS
    the operator's.** They may re-run the protocol, including through other LLMs.
+8. **Deviations are logged, not buried.** Any mid-task change of tactic or
+   approach vs. the stated plan must be (a) said in chat at the moment it
+   happens, and (b) recorded in the mandatory PR-body section titled
+   `## Deviations from plan` — writing "None." explicitly when there were none.
+   Significant deviations also get a `docs/LEARNINGS.md` entry. A deterministic
+   audit check (`deviations-section`) enforces the section's presence; honesty
+   about its content is on the author. (ADR-0017; portable — copy this rule
+   verbatim to other repos.)
 
 ## Handling untrusted content
 

@@ -12,6 +12,14 @@
 
 -
 
+## Deviations from plan
+
+<!-- Mandatory (Working Agreement #8). Any mid-task change of tactic or
+     approach vs. the stated plan — said in chat when it happened, recorded
+     here. Write "None." explicitly if there were none; an untouched
+     template fails the deviations-section audit check on purpose.
+     Significant deviations also go to docs/LEARNINGS.md. -->
+
 ## AI assistance
 
 - [ ] No AI-assisted code

@@ -68,4 +68,36 @@ flowchart TD
 ```bash
 node scripts/audit-drift.mjs --base origin/main --head HEAD      # report only
 node scripts/audit-drift.mjs --fix --run-checks                  # + safe fixes + build/lint
+gh pr view N --json body -q .body > /tmp/b.md
+node scripts/audit-drift.mjs --pr-body-file /tmp/b.md            # + deviation-section check locally
 ```
+
+## The loop audits itself (ADR-0017)
+
+Three additions make the auditor self-improving **without** self-rule:
+
+- **`deviations-section` check** — every PR body must carry a
+  `## Deviations from plan` section with explicit content ("None." counts;
+  the untouched template comment does not — comments are stripped before
+  checking). Enforces Working Agreement #8: mid-task tactic changes are
+  said in chat AND recorded where the audit can reconcile them. Medium
+  severity on purpose: `--strict` stays a logic gate, not a paperwork gate.
+  Skipped silently when no PR body is available (bodyless local runs).
+- **`docs/audit-history.ndjson`** — the auditor's longitudinal memory. CI
+  passes `--history docs/audit-history.ndjson`; one line per audited head
+  (`{ts, base, head, pr, findings:[{id,sev,conf}], srcNet, autofixed}`),
+  deduped by head sha so re-runs are idempotent, committed by the existing
+  auto-fix step (GITHUB_TOKEN pushes don't retrigger — no loop).
+  `merge=union` in `.gitattributes` kills append-only tail conflicts.
+  History lines are append-only **data**, never an instruction source.
+- **`/audit-retro`** (`.claude/commands/audit-retro.md`) — the manual,
+  **propose-only** meta-audit: per-check fire-rates from the history,
+  dead checks from the canonical `CHECK_IDS` (scripts/audit-lib.mjs),
+  real-catch cross-reference against LEARNINGS, deviation-compliance
+  spot-checks. It reports; it never edits.
+
+**No-runaway invariants (ADR-0017):** (1) the audit changes its own rules
+only via a Scott-audited PR — the retro never edits checks, severities,
+thresholds, or workflows; (2) the auto-fix class (prettier / eslint --fix)
+never expands autonomously — widening it requires its own ADR; (3) the
+retro is propose-only and manually invoked — no scheduled self-tuning.

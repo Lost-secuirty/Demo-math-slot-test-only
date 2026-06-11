@@ -44,6 +44,12 @@ The CI drift audit stays automatic; this gate governs the in-session deep
 audit. It exists because the #18 audit pause caught a payout-load-bearing
 seam with zero executable coverage — the stop is the point.
 
+**The loop audits itself (ADR-0017):** deviations rule = Working Agreement
+#8 (say tactic changes in chat AND fill the PR's `## Deviations from plan`
+section); the CI audit appends `docs/audit-history.ndjson`; `/audit-retro`
+is the manual, propose-only meta-audit. Full design in
+`docs/DRIFT-AUDIT.md` § "The loop audits itself".
+
 ## Environment notes
 
 - Ephemeral remote container — commit & push to persist (a Stop hook enforces a

@@ -15,12 +15,18 @@
 // Usage:
 //   node scripts/audit-drift.mjs [--base <ref>] [--head <ref>]
 //                                [--fix] [--run-checks] [--strict]
+//                                [--history <ndjson>] [--pr-body-file <md>]
 // Defaults: base=origin/main head=HEAD. Writes audit-report.md + stdout.
 // Exit 0 always, unless --strict and a high-severity finding exists.
+// --history appends one line per audited head to the longitudinal log
+// (CI passes docs/audit-history.ndjson); --pr-body-file feeds a PR body
+// for local runs (gh pr view N --json body -q .body > /tmp/b.md).
+// Pure logic lives in scripts/audit-lib.mjs (unit-tested).
 // =====================================================================
 
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, appendFileSync } from 'node:fs';
+import { checkDeviationSection, historyLine, hasHead } from './audit-lib.mjs';
 
 const argv = process.argv.slice(2);
 const opt = {
@@ -29,6 +35,8 @@ const opt = {
   fix: argv.includes('--fix'),
   runChecks: argv.includes('--run-checks'),
   strict: argv.includes('--strict'),
+  history: val('--history'), // CI: append one ndjson line per audited head
+  prBodyFile: val('--pr-body-file'), // local runs: gh pr view N --json body -q .body > file
 };
 
 function val(flag) {
@@ -44,8 +52,8 @@ function sh(cmd) {
 }
 
 const findings = [];
-const add = (severity, confidence, title, detail, evidence = []) =>
-  findings.push({ severity, confidence, title, detail, evidence });
+const add = (id, severity, confidence, title, detail, evidence = []) =>
+  findings.push({ id, severity, confidence, title, detail, evidence });
 
 // ---- resolve the commit range -------------------------------------------
 const mergeBase = sh(`git merge-base ${opt.base} ${opt.head}`).trim() || opt.base;
@@ -62,7 +70,12 @@ const nameStatus = sh(`git diff --name-status ${range}`)
 const changedPaths = nameStatus.map((f) => f.path);
 
 const commitText = sh(`git log --format=%s%x00%b ${range}`).toLowerCase();
-const prBody = (process.env.GITHUB_PR_BODY || readIf('.audit/pr-body.md') || '').toLowerCase();
+const prBodySource = opt.prBodyFile || '.audit/pr-body.md';
+const prBody = (process.env.GITHUB_PR_BODY || readIf(prBodySource) || '').toLowerCase();
+// the deviation check only runs when a body was actually provided — in
+// Actions GITHUB_PR_BODY is SET even when empty (check fires, correct);
+// a bodyless local run skips silently instead of nagging.
+const bodyProvided = 'GITHUB_PR_BODY' in process.env || existsSync(prBodySource);
 const claims = commitText + '\n' + prBody;
 
 function readIf(p) {
@@ -98,10 +111,11 @@ const isSrc = (p) => p && p.startsWith('src/');
 const inAudit = (p) => p === 'scripts/audit-drift.mjs' || p === 'verify.mjs';
 
 // ---- checks --------------------------------------------------------------
-function scan(re, predicate, sev, conf, title, detail) {
+function scan(id, re, predicate, sev, conf, title, detail) {
   const hits = added.filter((a) => predicate(a) && re.test(a.text));
   if (hits.length) {
     add(
+      id,
       sev,
       conf,
       title,
@@ -113,6 +127,7 @@ function scan(re, predicate, sev, conf, title, detail) {
 
 // rule violations (Working Agreement)
 scan(
+  'lint-suppress',
   /eslint-disable/,
   (a) => !inAudit(a.file),
   'high',
@@ -121,6 +136,7 @@ scan(
   'New `eslint-disable` — rules should be fixed, not silenced (CLAUDE.md rule 4).',
 );
 scan(
+  'test-skip',
   /\b(xit|xdescribe)\s*\(|\.(skip|only)\s*\(/,
   () => true,
   'high',
@@ -129,6 +145,7 @@ scan(
   'A test was skipped or `.only`-focused — tests must not be gutted to pass (rule 4).',
 );
 scan(
+  'todo-marker',
   /\b(TODO|FIXME|HACK|XXX)\b/,
   (a) => !inAudit(a.file),
   'medium',
@@ -137,6 +154,7 @@ scan(
   'Unfinished-work marker introduced — confirm it is intended, not a shortcut.',
 );
 scan(
+  'debug-stmt',
   /console\.log\(|^\s*debugger\s*;?\s*$/,
   (a) => isSrc(a.file) && a.file !== 'src/debug.js',
   'medium',
@@ -151,6 +169,7 @@ const sensitive = changedPaths.filter((p) =>
 );
 if (sensitive.length) {
   add(
+    'sensitive-paths',
     'medium',
     'high',
     'Sensitive files changed',
@@ -166,6 +185,7 @@ if (sensitive.length) {
 
 // 1) Deep nesting: added src lines indented past ~8 levels (2-space style).
 scan(
+  'deep-nesting',
   /^ {16,}\S/,
   (a) => isSrc(a.file),
   'low',
@@ -190,6 +210,7 @@ const srcNet = srcAdded - srcRemoved;
 const testChanged = changedPaths.some((p) => p.startsWith('test/'));
 if (srcNet > 300 && !testChanged) {
   add(
+    'growth-no-tests',
     'low',
     'low',
     'Large net code growth without tests',
@@ -203,6 +224,7 @@ const srcChanged = changedPaths.some(isSrc);
 const learningsChanged = changedPaths.includes('docs/LEARNINGS.md');
 if (srcChanged && !learningsChanged) {
   add(
+    'learnings-stale',
     'low',
     'medium',
     'LEARNINGS not updated',
@@ -211,8 +233,11 @@ if (srcChanged && !learningsChanged) {
   );
 }
 
-// unlogged files (heuristic): changed file never named in commits/PR body
+// unlogged files (heuristic): changed file never named in commits/PR body.
+// The audit's own history file is exempt — CI appends it every run, and a
+// loop that flags its own bookkeeping manufactures permanent noise.
 const unlogged = changedPaths.filter((p) => {
+  if (p === 'docs/audit-history.ndjson') return false;
   const stem = p
     .split('/')
     .pop()
@@ -222,12 +247,33 @@ const unlogged = changedPaths.filter((p) => {
 });
 if (unlogged.length) {
   add(
+    'unlogged-files',
     'low',
     'low',
     'Possibly unlogged changes',
     'These files are not referenced in any commit message or PR body (heuristic).',
     unlogged.slice(0, 20),
   );
+}
+
+// deviation surfacing (Working Agreement #8): the PR body must carry a
+// "## Deviations from plan" section with explicit content ("None." is
+// fine; an untouched template comment is not). Medium on purpose —
+// --strict stays a logic gate, not a paperwork gate.
+if (bodyProvided) {
+  const dev = checkDeviationSection(prBody);
+  if (dev) {
+    add(
+      'deviations-section',
+      'medium',
+      'high',
+      'Deviations section missing/empty',
+      dev.reason === 'missing'
+        ? 'PR body has no "## Deviations from plan" section — required even if "None." (AGENTS.md Working Agreement #8).'
+        : 'The "## Deviations from plan" section is empty — write "None." explicitly or list the deviations.',
+      [],
+    );
+  }
 }
 
 // ---- optional: build/lint health ----------------------------------------
@@ -239,8 +285,10 @@ if (opt.runChecks) {
     `\n## Build & lint\n` +
     `- lint: ${lint.ok ? '✅ pass' : '‼️ FAIL'}\n` +
     `- build: ${build.ok ? '✅ pass' : '‼️ FAIL'}\n`;
-  if (!lint.ok) add('high', 'high', 'Lint failing', 'CI `npm run lint` failed on this PR.', []);
-  if (!build.ok) add('high', 'high', 'Build failing', 'CI `npm run build` failed on this PR.', []);
+  if (!lint.ok)
+    add('lint-fail', 'high', 'high', 'Lint failing', 'CI `npm run lint` failed on this PR.', []);
+  if (!build.ok)
+    add('build-fail', 'high', 'high', 'Build failing', 'CI `npm run build` failed on this PR.', []);
 }
 function trySh(cmd) {
   try {
@@ -253,13 +301,38 @@ function trySh(cmd) {
 
 // ---- optional: safe auto-fixes -------------------------------------------
 let fixNote = '';
+let autofixDirty = false; // hoisted: the history line records it, and must
+// be computed BEFORE the history append dirties the tree itself
 if (opt.fix) {
   sh('npx prettier --write . > /dev/null 2>&1');
   sh('npm run lint -- --fix > /dev/null 2>&1');
   const dirty = sh('git status --porcelain').trim();
+  autofixDirty = Boolean(dirty);
   fixNote = dirty
     ? `\n## Auto-fixes applied\nSafe formatting/lint fixes (prettier + eslint --fix) were applied:\n\n\`\`\`\n${dirty}\n\`\`\`\n`
     : `\n## Auto-fixes applied\nNone needed — formatting and lint were already clean.\n`;
+}
+
+// ---- optional: longitudinal history (CI only) -----------------------------
+// One ndjson line per audited head; dedupe makes workflow re-runs
+// idempotent. Findings are diff-range based, so they're pre-autofix by
+// construction. The workflow's existing commit step persists the file.
+if (opt.history) {
+  const headSha = sh(`git rev-parse ${opt.head}`).trim();
+  if (headSha && !hasHead(readIf(opt.history), headSha)) {
+    appendFileSync(
+      opt.history,
+      historyLine({
+        ts: new Date().toISOString(),
+        base: mergeBase,
+        head: headSha,
+        pr: Number(process.env.GITHUB_PR_NUMBER) || null,
+        findings,
+        srcNet,
+        autofixed: opt.fix && autofixDirty,
+      }),
+    );
+  }
 }
 
 // ---- report --------------------------------------------------------------
@@ -281,7 +354,7 @@ if (findings.length) {
     md += `| ${emoji[f.severity]} | **${f.title}** | ${f.severity} | ${f.confidence} | ${ev} |\n`;
   }
   md += `\n_Details:_\n`;
-  for (const f of findings) md += `- **${f.title}** — ${f.detail}\n`;
+  for (const f of findings) md += `- **${f.title}** (\`${f.id}\`) — ${f.detail}\n`;
 }
 md += checks + fixNote;
 md += `\n## Code size\n- \`src/\` net change this range: **${srcNet >= 0 ? '+' : ''}${srcNet}** lines (+${srcAdded}/-${srcRemoved})\n`;
