@@ -35,7 +35,9 @@ bar, seven`, plus the `coin` bonus symbol. (`src/config.js: SYMBOLS`.)
 ## 4. Hold & Win bonus (`src/holdAndWin.js`)
 
 - **Trigger:** 6+ `coin` symbols on the board. Coins land ~25%/cell, so this
-  fires naturally ~1 in 100 spins — the feature is the RTP engine.
+  fires naturally ~1 in 100 spins — the feature is the RTP engine. (The rule
+  lives once in `src/features/holdAndWin.js` `checkTrigger`; the game
+  dispatches features via the registry, ADR-0016.)
 - Coins lock; remaining cells respin. Respins reset to **3** whenever a new coin
   lands. Each coin holds a cash value or a MINI/MINOR/MAJOR jackpot.
 - Filling all 9 cells awards the **GRAND**. Jackpots (× bet): MINI 20, MINOR 50,

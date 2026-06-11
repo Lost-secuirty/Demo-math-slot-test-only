@@ -31,7 +31,7 @@ import {
   ECONOMY,
   GRID,
 } from './config.js';
-import { play as playBonus } from './features/holdAndWin.js';
+import { play as playBonus, checkTrigger } from './features/holdAndWin.js';
 
 // Hold & Win coin-decision odds — sourced from config (BONUS) so the bonus
 // Monte-Carlo matches the live feature (holdAndWin.js) exactly. The live
@@ -278,9 +278,11 @@ export function monteCarloFullGame(
     const coinCells = [];
     for (let i = 0; i < cellCount; i++) if (flat[i] === model.bonusSymbol) coinCells.push(i);
     let bonusPayout = 0;
-    if (coinCells.length >= model.bonus.triggerCount) {
+    // same trigger rule the live game uses (features/holdAndWin.js)
+    const triggered = checkTrigger(coinCells, model);
+    if (triggered) {
       bonusTriggers++;
-      const res = simulateBonus(coinCells, model, rng);
+      const res = simulateBonus(triggered.cells, model, rng);
       bonusPayout = res.total;
       bonusSum += bonusPayout;
       if (res.filledAll) grands++;

@@ -23,7 +23,7 @@ A flashy, **buttery-smooth** classic-style 3×3 slot machine, built with **PixiJ
 ## 🕹️ Test it yourself
 
 **Play it live (no install):** every push auto-deploys to GitHub Pages →
-**https://lostsoulfs.github.io/replit-code/**
+**https://lostsoulfs.github.io/Demo-math-slot-test-only/**
 _One-time setup:_ in the repo go to **Settings → Pages → Source: "GitHub Actions"**.
 (If Pages isn't available on the repo's plan, the build is also attached as a
 downloadable artifact on each Actions run.)

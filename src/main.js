@@ -24,6 +24,8 @@ import { generateOutcome } from './outcome.js';
 import { Effects } from './effects.js';
 import { UI } from './ui.js';
 import { BonusGame } from './holdAndWin.js';
+import { findTriggered } from './features/registry.js';
+import { defaultModel } from './slotmath.js';
 import { audio } from './audio.js';
 import { tween, wait, Ease } from './utils.js';
 
@@ -99,6 +101,11 @@ import { tween, wait, Ease } from './utils.js';
   // ---------- bonus ----------
   const bonus = new BonusGame(app, textures, effects);
   world.addChild(bonus.root);
+
+  // feature id -> Pixi scene (the render half of the registry seam,
+  // ADR-0016). Pure feature logic lives in src/features/; this map is
+  // the only place a feature gains a renderer.
+  const featureRenderers = { holdAndWin: bonus };
 
   // ---------- win banner ----------
   const banner = new Text({
@@ -265,8 +272,15 @@ import { tween, wait, Ease } from './utils.js';
   async function resolve(grid) {
     const res = evaluate(grid, state.bet);
 
-    if (res.coinCount >= BONUS.triggerCount) {
-      const won = await bonus.run(res.coinCells, state.bet);
+    // ask the registry which feature fired. defaultModel() is snapshotted
+    // per spin so live debug-slider edits to config keep applying, exactly
+    // like the old direct BONUS.triggerCount read.
+    const triggered = findTriggered(res.coinCells, defaultModel());
+    if (triggered) {
+      const won = await featureRenderers[triggered.feature.id].run(
+        triggered.payload.cells,
+        state.bet,
+      );
       state.balance += won;
       ui.setBalance(state.balance);
       ui.setWin(won);

@@ -8,6 +8,31 @@ something.** Include the date and enough context to be useful later.
 
 ## 2026-06-11
 
+- **Phase 2/PR B — feature-plugin registry (ADR-0016); Hold & Win is plug-in #1.**
+  The last hardcoded feature coupling is gone: `main.js` no longer inlines the
+  trigger rule or names `BonusGame` in the branch — it asks
+  `src/features/registry.js` `findTriggered(cells, model)` and dispatches via a
+  `featureRenderers` map (`id → Pixi scene`; renderers deliberately stay OUT of
+  the registry to keep the pure/render firewall). The trigger rule lives ONCE in
+  `features/holdAndWin.js` `checkTrigger(cells, model)` (no rng, count-only,
+  passes the same cells array through) — the live game reaches it via the
+  registry, `monteCarloFullGame` imports it directly, so live-vs-sim trigger
+  drift is now impossible. Gotchas: (1) the orchestrator snapshots
+  `defaultModel()` **per spin** for the check — a boot-time model would freeze
+  values and break the live debug sliders (config singletons are mutated live);
+  (2) the harness does NOT consult the registry, so sims stay independent of
+  global registration state. Equivalence re-proven: seeded outputs incl. the
+  12M headline are `===`-identical through the registry path; 107/107 green.
+  Adding a feature is now: pure module + `registerFeature` + one renderer-map
+  entry.
+- **Repo renamed `replit-code` → `Demo-math-slot-test-only` (Scott, 2026-06-11).**
+  Git remotes keep working (GitHub redirects), and the deployed app survives
+  because `vite.config.js` uses `base: './'` — but **GitHub Pages URLs do NOT
+  redirect**, so the README's live-demo link was dead until re-pointed at
+  `lostsoulfs.github.io/Demo-math-slot-test-only/`. ADR-0012's "replit-code"
+  mention is a historical quote — left as-is (decision records keep their
+  history). Lesson: after a repo rename, grep for the old name — Pages links
+  and badges are the silent breakage.
 - **Coverage finding: the rendered payout path had NO executable check anywhere.**
   Review of PR #18 surfaced that `evaluate()` scores the grid read back from
   the reel strips (`reels.spin()` → `getGrid()` → `getVisible()`), NOT the
