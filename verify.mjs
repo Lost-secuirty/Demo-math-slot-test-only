@@ -11,7 +11,12 @@ import { chromium } from 'playwright';
 // animated bonus is merely observed, not gated. See docs/LEARNINGS.md.
 
 const url = 'http://localhost:4173/?debug=1';
-const browser = await chromium.launch();
+// PW_CHROMIUM lets a runner point at an already-present Chromium when the
+// pinned browser can't be downloaded (e.g. restricted network). CI installs
+// the matching browser and leaves this unset, so default behavior is unchanged.
+const browser = await chromium.launch(
+  process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {},
+);
 const page = await browser.newPage({
   viewport: { width: 800, height: 1000 },
   deviceScaleFactor: 1,
@@ -102,9 +107,35 @@ if (has) {
   await page.evaluate(() => window.__slot.applyTheme('neon'));
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'shot-theme-neon.png' });
-  await page.evaluate(() => window.__slot.applyTheme('classic'));
 
-  // bonus: observe only (its animation may be too slow to finish headless).
+  // Spokey theme: cabinet chrome shows + the unease layer arms (bonus-gated).
+  await page.evaluate(() => window.__slot.applyTheme('spokey'));
+  await page.waitForTimeout(400);
+  check(
+    'spokey theme engages cabinet + unease',
+    await page.evaluate(
+      () => window.__slot.cabinet.layer.visible === true && window.__slot.unease.enabled === true,
+    ),
+  );
+  await page.screenshot({ path: 'shot-theme-spokey.png' });
+
+  // settings panel: opens, accepts a volume change, closes (no errors).
+  await page.evaluate(() => window.__slot.openSettings());
+  await page.waitForTimeout(200);
+  check('settings panel opens', await page.evaluate(() => window.__slot.settings.isOpen));
+  await page.evaluate(() => window.__slot.setVolume(0.3));
+  await page.screenshot({ path: 'shot-settings.png' });
+  await page.evaluate(() => window.__slot.settings.close());
+
+  // paytable modal: opens + closes.
+  await page.evaluate(() => window.__slot.openPaytable());
+  await page.waitForTimeout(200);
+  check('paytable opens', await page.evaluate(() => window.__slot.paytable.isOpen));
+  await page.screenshot({ path: 'shot-paytable.png' });
+  await page.evaluate(() => window.__slot.paytable.close());
+
+  // bonus under Spokey: observe only (animation may be too slow to finish
+  // headless), but this exercises the unease start/watcher/stop hooks.
   const bonusWin = await Promise.race([
     page.evaluate(() => window.__slot.runBonus(7)).catch(() => null),
     new Promise((r) => setTimeout(() => r('TIMEOUT'), 20000)),

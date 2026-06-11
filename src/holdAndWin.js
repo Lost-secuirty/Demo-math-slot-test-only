@@ -30,10 +30,12 @@ function txt(text, size, fill, weight = '900') {
 }
 
 export class BonusGame {
-  constructor(app, textures, effects) {
+  constructor(app, textures, effects, unease = null) {
     this.app = app;
     this.textures = textures;
     this.effects = effects;
+    // optional Spokey dread layer — VISUAL/AUDIO only, never the money ledger
+    this.unease = unease;
     this.root = new Container();
     this.root.visible = false;
     this.root.zIndex = 80;
@@ -151,6 +153,10 @@ export class BonusGame {
 
     this.root.visible = true;
     audio.bonusTrigger();
+    // Spokey arrives with the bonus: swell the dread bed, darken the edges,
+    // and maybe reveal a distant watcher. No-op under non-Spokey themes.
+    this.unease?.start();
+    this.unease?.spawnWatcher();
     await wait(500);
 
     // Decide the whole round up front from the ONE shared feature sim
@@ -178,6 +184,9 @@ export class BonusGame {
     for (let e = 1; e < events.length; e++) {
       const ev = events[e];
       await wait(350);
+      // unease cues ride the respin beat (chance-gated, rare by default)
+      await this.unease?.maybeFlicker();
+      this.unease?.maybeApproach();
       await this._respinFlicker(emptyCells());
 
       for (const { idx, coin } of ev.landed) {
@@ -248,7 +257,8 @@ export class BonusGame {
     }
 
     await wait(1400);
-    // fade out
+    // fade out + let the dread recede with the bonus
+    this.unease?.stop();
     await tween(450, (t) => {
       this.root.alpha = 1 - t;
     });

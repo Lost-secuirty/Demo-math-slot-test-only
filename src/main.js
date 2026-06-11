@@ -16,6 +16,7 @@ import {
   QUALITY,
   THEMES,
   PAYLINES,
+  AUDIO,
 } from './config.js';
 import { buildSymbolTextures } from './symbols.js';
 import { ReelSet, CELL } from './reels.js';
@@ -24,9 +25,14 @@ import { generateOutcome } from './outcome.js';
 import { Effects } from './effects.js';
 import { UI } from './ui.js';
 import { BonusGame } from './holdAndWin.js';
+import { Cabinet } from './cabinet.js';
+import { Unease } from './unease.js';
+import { SettingsPanel } from './settings.js';
+import { PaytablePanel } from './paytable.js';
 import { findTriggered } from './features/registry.js';
 import { defaultModel } from './slotmath.js';
 import { audio } from './audio.js';
+import { loadSettings, saveSettings } from './persist.js';
 import { tween, wait, Ease } from './utils.js';
 
 (async () => {
@@ -65,6 +71,9 @@ import { tween, wait, Ease } from './utils.js';
   rays.visible = QUALITY.godrays;
   bg.addChild(rays);
 
+  // ---------- Spokey cabinet chrome (hidden unless the spokey theme) ----------
+  const cabinet = new Cabinet(world);
+
   // ---------- textures + reels ----------
   const textures = buildSymbolTextures(app.renderer);
   const reels = new ReelSet(textures);
@@ -98,8 +107,11 @@ import { tween, wait, Ease } from './utils.js';
   highlightLayer.zIndex = 12;
   world.addChild(highlightLayer);
 
+  // ---------- unease (Spokey dread layer; bonus-gated, visual/audio only) ----
+  const unease = new Unease(app, world);
+
   // ---------- bonus ----------
-  const bonus = new BonusGame(app, textures, effects);
+  const bonus = new BonusGame(app, textures, effects, unease);
   world.addChild(bonus.root);
 
   // feature id -> Pixi scene (the render half of the registry seam,
@@ -166,13 +178,35 @@ import { tween, wait, Ease } from './utils.js';
     bannerGlow.color = COLORS.coin;
   }
 
+  let activeTheme = 'classic';
+
+  // start/stop the ambient dread bed to match the theme — but only once audio
+  // is unlocked (the first user gesture); unlock() calls this again afterward.
+  function updateAmbience() {
+    if (!audio.ctx) return;
+    if (activeTheme === 'spokey') audio.startAmbience();
+    else audio.stopAmbience();
+  }
+
   function applyTheme(name) {
     const preset = THEMES[name];
     if (preset) Object.assign(COLORS, preset);
+    activeTheme = name;
     paintBackground();
     paintFrame();
+    cabinet.paint(name);
+    const spooky = name === 'spokey';
+    unease.setEnabled(spooky);
+    if (ui) {
+      // the cabinet supplies its own marquee + LED readout under Spokey
+      ui.setTitleVisible(!spooky);
+      ui.setReadoutVisible(!spooky);
+    }
+    updateAmbience();
   }
-  applyTheme('classic');
+  // NOTE: the initial applyTheme(...) is deferred until after the UI and the
+  // persisted settings are created (see below), so it can honor a saved theme
+  // and drive the HUD visibility toggles.
 
   // ---------- state ----------
   const state = {
@@ -184,6 +218,13 @@ import { tween, wait, Ease } from './utils.js';
     forceNext: null, // debug: a crafted 3x3 grid consumed by the next spin
   };
 
+  // persisted player settings (volume / mute / theme). Applied to the audio
+  // engine now (stored even before the context unlocks) and to the theme below.
+  const saved = loadSettings({ volume: AUDIO.masterVolume, muted: false, theme: 'classic' });
+  audio.setVolume(saved.volume);
+  audio.setMuted(saved.muted);
+  const savedTheme = THEMES[saved.theme] ? saved.theme : 'classic';
+
   const ui = new UI(app, {
     onSpin: () => {
       state.lastInteract = performance.now();
@@ -191,26 +232,71 @@ import { tween, wait, Ease } from './utils.js';
     },
     onBetChange: (bet) => {
       state.bet = bet;
+      cabinet.setReadout({ bet });
     },
     onAuto: () => {
       state.lastInteract = performance.now();
       toggleAuto();
     },
-    onMute: () => {
-      const m = !audio.muted;
-      audio.setMuted(m);
-      ui.setMuted(m);
+    onMute: () => setMuted(!audio.muted),
+    onSettings: () => {
+      state.lastInteract = performance.now();
+      paytable.close();
+      settings.open();
+    },
+    onPaytable: () => {
+      state.lastInteract = performance.now();
+      settings.close();
+      paytable.open();
     },
   });
   ui.root.zIndex = 60;
   world.addChild(ui.root);
-  ui.setBalance(state.balance);
-  ui.setWin(0);
+
+  // Settings + Paytable modals (Pixi overlays, zIndex 95)
+  const settings = new SettingsPanel(app, world, {
+    onVolume: (v) => {
+      audio.setVolume(v);
+      saveSettings({ volume: v });
+    },
+    onMute: () => setMuted(!audio.muted),
+    onTheme: (name) => {
+      applyTheme(name);
+      saveSettings({ theme: name });
+      settings.syncTheme(name);
+    },
+    getState: () => ({ volume: audio.volume, muted: audio.muted, theme: activeTheme }),
+  });
+  const paytable = new PaytablePanel(app, world, { getBet: () => state.bet });
+
+  // single mute path shared by the HUD SOUND button and the settings toggle
+  function setMuted(m) {
+    audio.setMuted(m);
+    ui.setMuted(m);
+    settings.syncMuted(m);
+    saveSettings({ muted: m });
+  }
+
+  // push readouts to BOTH the HUD and the Spokey cabinet LED strip
+  function showBalance(v) {
+    ui.setBalance(v);
+    cabinet.setReadout({ credits: v, bet: state.bet });
+  }
+  function showWin(v) {
+    ui.setWin(v);
+    cabinet.setReadout({ win: v });
+  }
+
+  ui.setMuted(saved.muted);
+  showBalance(state.balance);
+  showWin(0);
+  applyTheme(savedTheme);
 
   // first user gesture unlocks audio
   const unlock = () => {
     audio.init();
     audio.resume();
+    updateAmbience(); // start the dread bed now if Spokey is the active theme
     window.removeEventListener('pointerdown', unlock);
   };
   window.addEventListener('pointerdown', unlock);
@@ -249,9 +335,9 @@ import { tween, wait, Ease } from './utils.js';
     if (state.balance < state.bet) state.balance = ECONOMY.startingBalance; // demo: never dry out
     setBusy(true);
     clearHighlights();
-    ui.setWin(0);
+    showWin(0);
     state.balance -= state.bet;
-    ui.setBalance(state.balance);
+    showBalance(state.balance);
 
     audio.startSpin();
     const outcome = state.forceNext || generateOutcome();
@@ -286,8 +372,8 @@ import { tween, wait, Ease } from './utils.js';
       }
       const won = await renderer.run(triggered.payload.cells, state.bet);
       state.balance += won;
-      ui.setBalance(state.balance);
-      ui.setWin(won);
+      showBalance(state.balance);
+      showWin(won);
       await celebrate(won);
       return;
     }
@@ -296,7 +382,7 @@ import { tween, wait, Ease } from './utils.js';
       // credit the win as soon as it's determined, then play the (cosmetic)
       // celebration — the player's balance shouldn't wait on the animation.
       state.balance += res.total;
-      ui.setBalance(state.balance);
+      showBalance(state.balance);
       await presentLineWins(res);
       await celebrate(res.total);
     }
@@ -373,11 +459,11 @@ import { tween, wait, Ease } from './utils.js';
     await tween(
       Math.min(1600, 500 + mult * 8),
       (t) => {
-        ui.setWin(amount * t);
+        showWin(amount * t);
       },
       Ease.outCubic,
     );
-    ui.setWin(amount);
+    showWin(amount);
 
     if (tier) {
       await wait(700);
@@ -421,9 +507,19 @@ import { tween, wait, Ease } from './utils.js';
     ui,
     effects,
     bonus,
+    cabinet,
+    unease,
+    settings,
+    paytable,
     doSpin,
     toggleAuto,
     applyTheme,
+    setVolume: (v) => {
+      audio.setVolume(v);
+      saveSettings({ volume: v });
+    },
+    openSettings: () => settings.open(),
+    openPaytable: () => paytable.open(),
     generateOutcome,
 
     // force the next spin to land a winning middle line of `symbolId`
@@ -459,12 +555,13 @@ import { tween, wait, Ease } from './utils.js';
 
     setBalance(v) {
       state.balance = Math.max(0, Math.floor(v));
-      ui.setBalance(state.balance);
+      showBalance(state.balance);
     },
     setBetIndex(i) {
       ui.betIndex = Math.max(0, Math.min(ECONOMY.betLevels.length - 1, i));
       ui.refresh();
       state.bet = ui.bet;
+      cabinet.setReadout({ bet: state.bet });
     },
     setGodrays(on) {
       QUALITY.godrays = on;

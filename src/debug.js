@@ -18,6 +18,7 @@ import {
   BONUS,
   PAYTABLE,
   GRID,
+  UNEASE,
 } from './config.js';
 
 let gui = null;
@@ -85,6 +86,18 @@ function build(api) {
   fQ.add(QUALITY, 'godrays')
     .name('godrays')
     .onChange((v) => api.setGodrays(v));
+
+  // ===== Audio / Unease (Spokey) =====
+  const fU = gui.addFolder('Audio / Unease');
+  const audioProxy = { volume: 0.5 };
+  fU.add(audioProxy, 'volume', 0, 1, 0.01)
+    .name('master volume')
+    .onChange((v) => api.setVolume(v));
+  fU.add(UNEASE, 'enabled').name('unease enabled');
+  fU.add(UNEASE, 'vignetteAlpha', 0, 1, 0.05).name('vignette');
+  fU.add(UNEASE, 'flickerChancePerRespin', 0, 1, 0.05).name('flicker chance');
+  fU.add(UNEASE, 'watcherChance', 0, 1, 0.05).name('watcher chance');
+  fU.add(UNEASE, 'watcherApproachChance', 0, 1, 0.05).name('approach chance');
 
   // ===== Economy =====
   const fE = gui.addFolder('Economy');

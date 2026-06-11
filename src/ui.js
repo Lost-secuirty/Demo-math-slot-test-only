@@ -92,7 +92,18 @@ export class UI {
     t.filters = [
       new GlowFilter({ color: COLORS.coin, distance: 14, outerStrength: 2, quality: 0.2 }),
     ];
+    this.titleText = t;
     this.root.addChild(t);
+  }
+
+  // The Spokey cabinet supplies its own marquee + LED readout, so the default
+  // title and corner balance/win readouts are hidden under that theme.
+  setTitleVisible(v) {
+    if (this.titleText) this.titleText.visible = v;
+  }
+  setReadoutVisible(v) {
+    this.balanceText.visible = v;
+    this.winText.visible = v;
   }
 
   _buildJackpotLadder() {
@@ -179,7 +190,33 @@ export class UI {
     this.muteBtn.position.set(900, ctrlY + 34);
     this.root.addChild(this.autoBtn, this.muteBtn);
 
+    // SETTINGS (gear) + INFO (paytable) — small icon buttons, top-right corner
+    this.settingsBtn = this._iconBtn(
+      '⚙',
+      () => this.handlers.onSettings && this.handlers.onSettings(),
+    );
+    this.settingsBtn.position.set(1022, 58);
+    this.infoBtn = this._iconBtn('i', () => this.handlers.onPaytable && this.handlers.onPaytable());
+    this.infoBtn.position.set(936, 58);
+    this.root.addChild(this.settingsBtn, this.infoBtn);
+
     this.refresh();
+  }
+
+  _iconBtn(glyph, onTap) {
+    const b = new Button({
+      w: 76,
+      h: 76,
+      radius: 20,
+      fill: 0x16306e,
+      stroke: COLORS.frameGold,
+      onTap,
+    });
+    const t = label(glyph, glyph === 'i' ? 44 : 40, COLORS.textWhite, '900');
+    t.anchor.set(0.5);
+    t.position.set(38, 38);
+    b.addChild(t);
+    return b;
   }
 
   _smallBtn(txt, onTap) {

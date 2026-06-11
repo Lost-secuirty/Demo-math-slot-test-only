@@ -155,6 +155,43 @@ export const QUALITY = {
   godrays: true,
 };
 
+// ---- Audio (procedural WebAudio; ADR-0002 — no asset files) ----
+// All gains 0..1. The engine routes SFX and the ambient dread bed through
+// separate sub-gains under a master, so ambience can swell independently
+// during the bonus. masterVolume is the player-facing default (persisted).
+export const AUDIO = {
+  masterVolume: 0.5, // default master; the settings slider drives this 0..1
+  sfxGain: 1.0, // SFX channel level (relative to master)
+  ambienceBaseGain: 0.12, // resting ambience level while the dread bed plays
+  // low drone: two near-unison oscillators through a lowpass + slow LFO breath
+  drone: { freqA: 58, freqB: 61.5, lowpassHz: 220, lfoHz: 0.07 },
+  // sparse "distant tones" punctuating the drone with deliberate silences
+  distantToneEveryMs: 9000,
+  distantToneJitterMs: 4000,
+  distantToneFreqs: [196, 233, 311],
+};
+
+// ---- Unease (Spokey horror layer — VISUAL/AUDIO ONLY) ----
+// Calibrated "just out of reach" dread, gated to the Hold & Win bonus. None of
+// this reads or writes the bonus ledger (coin amounts / totals / respins) — it
+// only decorates the existing animation timeline. Keep events RARE so the game
+// reads as a normal slot that's subtly wrong, not a jump-scare. See
+// src/unease.js + docs/LEARNINGS.md.
+export const UNEASE = {
+  enabled: true,
+  swellMs: 1800, // ambience ramp time entering/leaving the bonus
+  vignetteAlpha: 0.5, // darkened edges during the bonus
+  ambienceBonusGain: 0.5, // ambience level the bonus swells to
+  flickerChancePerRespin: 0.35, // chance of a light flicker per respin event
+  flickerDipMs: 90, // flicker dip duration
+  watcherChance: 0.4, // chance a distant watcher appears in a bonus
+  watcherApproachChance: 0.5, // chance it edges closer on a later respin
+  watcherBaseAlpha: 0.18, // how faint the watcher starts (low = barely there)
+};
+
+// ---- Persisted player settings (localStorage) ----
+export const STORAGE_KEY = 'coinsHoldWin.settings.v1';
+
 // ---- Theme presets (live-switchable via the debug panel) ----
 // Each preset overrides keys on COLORS, then the scene repaints the
 // background gradient, reel frame, godrays and glow accents. Baked symbol
@@ -195,6 +232,28 @@ export const THEMES = {
     coin: 0xff8a3c,
     win: 0xffd25a,
     ray: 0xff6a4f,
+  },
+  // "Spokey" — a dark-but-colorful horror skin. Behaves like a normal slot;
+  // the unease (vignette, flicker, a distant watcher) is gated to the Hold &
+  // Win bonus (see UNEASE + src/unease.js). The standard keys recolor the
+  // existing scene via applyTheme; the extra keys below are read only by the
+  // Spokey-only chrome (cabinet/fog) with fallbacks, so other themes ignore
+  // them. Symbol art is unchanged here — a procedural reskin is a later pass.
+  spokey: {
+    bgTop: 0x1a0e14, // dried-blood maroon
+    bgBottom: 0x05060a, // cold near-black
+    frameGold: 0x6e7f53, // sickly verdigris brass
+    frameGoldDark: 0x2c2118, // rusted iron
+    coin: 0xc8412a, // ember accent
+    win: 0xc69a3a, // tarnished gold
+    ray: 0x3a1f2a, // dim crimson godrays
+    // Spokey-only chrome colors:
+    fog: 0x0a0f14,
+    cabinet: 0x120a10,
+    cabinetEdge: 0x4a2e22,
+    marquee: 0x8a2f22,
+    ledOn: 0xd14a2a,
+    ledOff: 0x2a1410,
   },
 };
 export const THEME_NAMES = Object.keys(THEMES);
