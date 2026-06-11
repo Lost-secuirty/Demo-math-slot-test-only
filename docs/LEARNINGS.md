@@ -11,6 +11,21 @@ evergreen rules to `GOLDEN_RULES.md`, mark superseded entries historical.
 
 ---
 
+## 2026-06-11 — audit-loop mechanics + cross-repo rollout (PR #28)
+
+- **Judge PRs by the last human commit, not the bot head.** Every PR here ends
+  on a `github-actions[bot]` "audit: auto-fix + history" head commit, and
+  `GITHUB_TOKEN` pushes create _held_ (`action_required`) workflow runs — so
+  the bot head shows no green checks. The real validation lives one commit
+  back; approve-and-run the held runs if a green head is wanted.
+- **The Working Agreement here is the extended local superset** of the shared
+  core now in the other repos' `AGENTS.md`. The numbering (especially #8/#9)
+  is load-bearing — ADR-0017, the `deviations-section` check, and
+  `GOLDEN_RULES.md` reference it by number. Never renumber; cross-reference.
+- Recon reports (even from subagents) are leads, not facts: this rollout's
+  survey was wrong four times (claimed concurrency existed in ci/codeql here,
+  and in two other repos' workflows). Ground-truth the file before editing.
+
 ## 2026-06-11
 
 - **Post-#23 MoE retro → memory-hygiene loop changes (Scott-approved, ranked).**
