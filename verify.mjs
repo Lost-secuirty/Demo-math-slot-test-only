@@ -58,6 +58,12 @@ if (has) {
       page.evaluate(() => (window.__slot.state.lastInteract = performance.now())).catch(() => {}),
     2000,
   );
+  // ALSO force auto OFF: on slow runners (CI software-WebGL) the boot can
+  // exceed idleToAttractMs BEFORE keepAwake starts, and keepAwake only
+  // prevents NEW activations — state.auto stays on once engaged, chaining
+  // spins that drain the balance and make forceLineWin no-op (it returns
+  // early while busy). First CI run failed exactly this way (990 -> 975).
+  await page.evaluate(() => window.__slot.toggleAuto(false));
 
   // 1) a deterministic NO-WIN spin settles (reels stop, not busy).
   await page.evaluate(() => {
@@ -71,13 +77,17 @@ if (has) {
   await page.screenshot({ path: 'shot-spinning.png' });
   check(
     'no-win spin settles',
-    await waitFn(() => !window.__slot.state.busy && !window.__slot.reels.spinning),
+    await waitFn(() => !window.__slot.state.busy && !window.__slot.reels.spinning, null, 60000),
   );
 
   // 2) a forced winning line CREDITS the balance (credited before the animation).
   // Poll from Node with a generous budget: at this container's ~2fps the reel
   // animation runs in slow-motion (the engine clamps per-frame dt), so the
   // credit can take a while in wall-clock time — but it does land.
+  // forceLineWin silently no-ops while state.busy — make sure the game is
+  // fully idle (and auto is still off) before reading the baseline balance.
+  await waitFn(() => !window.__slot.state.busy && !window.__slot.reels.spinning, null, 60000);
+  await page.evaluate(() => window.__slot.toggleAuto(false));
   const before = await page.evaluate(() => window.__slot.state.balance);
   await page.evaluate(() => window.__slot.forceLineWin('seven'));
   let after = before;

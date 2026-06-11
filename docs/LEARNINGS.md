@@ -8,6 +8,18 @@ something.** Include the date and enough context to be useful later.
 
 ## 2026-06-11
 
+- **Smoke's first CI run failed on a latent test race, not game code (990→975).**
+  On the GitHub runner the slow software-WebGL boot exceeded `idleToAttractMs`
+  BEFORE verify.mjs's keepAwake interval started → attract engaged →
+  `state.auto` chained spins. keepAwake only prevents NEW activations; auto
+  stays on once engaged. `forceLineWin()` then silently no-oped (returns early
+  while `state.busy`), and the poll watched auto-spins drain 3 bets. Fix in
+  verify.mjs only: `toggleAuto(false)` after boot AND again before the
+  forced-win baseline; wait-for-fully-idle before calling `forceLineWin`; 60s
+  settle timeouts. Lessons: (1) a test tuned in one environment carries hidden
+  timing assumptions — the first run on new hardware is a test OF the test;
+  (2) silent-no-op test APIs (`if (busy) return`) turn races into confusing
+  downstream failures — prefer waiting for idle before invoking them.
 - **#19 audit fold-ins (Scott-gated audit, per the new CLAUDE.md gate).** The
   deep audit found the registry's trigger input was secretly coin-shaped —
   `checkTrigger(cells)` looked general but the orchestrator only fed it
