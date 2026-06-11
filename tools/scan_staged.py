@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Staged secret/PII gate — blocks commits (and CI) that introduce secrets or a
-path from the personal/Drive tier, and WARNS (non-blocking) on PII.
+"""Staged secret/PII gate that blocks secrets, PII, and personal-tier paths.
 
 Usage:
   python3 tools/scan_staged.py --staged          # scan staged diff (pre-commit)
@@ -12,10 +11,7 @@ Exit code: 0 = no blocking findings, 1 = a block (commit/CI should fail), 2 = us
 Severity:
   BLOCK  secrets (API keys, tokens, private keys) and personal/Drive-tier paths
          (PERSONAL_JOURNAL*, private/). These must never reach git.
-  WARN   PII (EMAIL / SSN / CREDIT+Luhn / PHONE). Surfaced but NOT blocking, by
-         decision — personal data isn't expected in these repos, and hard-blocking
-         it caused false positives. Promote PII to BLOCK later by removing the
-         kinds from _PII_KINDS below (one line).
+  BLOCK  PII (EMAIL / SSN / CREDIT+Luhn / PHONE).
 
 The PII detectors (EMAIL / SSN / CREDIT+Luhn / PHONE) are VENDORED verbatim from
 testing-kits/harnesses/security/pii_redaction_test_harness.py so each repo stays
@@ -73,8 +69,8 @@ _SECRET_RES = [
     ),
 ]
 
-# PII kinds are WARN-only (see module docstring). Everything else BLOCKs.
-_PII_KINDS = {"EMAIL", "SSN", "CREDIT_CARD", "PHONE"}
+# All findings block in public repositories.
+_PII_KINDS = set()
 
 _PERSONAL_PATH_RE = re.compile(r"(^|/)(PERSONAL_JOURNAL[^/]*$|private/)")
 
@@ -137,21 +133,14 @@ def _fmt(rows) -> None:
 
 
 def _scan(diff_args: list[str]) -> int:
-    blocks, warns = [], []
+    blocks = []
     for p in _changed_paths(diff_args):
         if _PERSONAL_PATH_RE.search(p):
             blocks.append((p, 0, "PERSONAL/PRIVATE PATH (Drive-tier only)"))
     for path, no, text in _added_lines(diff_args):
         for hit in scan_line(text):
-            (warns if hit in _PII_KINDS else blocks).append((path or "?", no, hit))
-
-    if warns:
-        print("WARNING: possible PII in this change (not blocking):")
-        _fmt(warns)
-        print()
+            blocks.append((path or "?", no, hit))
     if not blocks:
-        if warns:
-            print("PII warnings only — commit allowed. Keep personal data in the Drive vault.")
         return 0
     print("BLOCKED: possible secret / personal-tier content in this change.\n")
     _fmt(blocks)
@@ -176,12 +165,12 @@ def _run_self_test() -> int:
     ssn = "123" + "-45-" + "6789"
     card = " ".join(["4242"] * 4)  # passes Luhn
     email = "alice" + "@" + "example.com"
-    must_warn = [ssn, card, email]
+    must_pii = [ssn, card, email]
 
     must_clean = [
         "Beverly Hills 90210",                       # ZIP, not PII
         "order #" + "1234567812345678",              # 16-digit, fails Luhn
-        "date: 2026-06-02  project: replit-code",    # frontmatter date (DOB omitted)
+        "date: 2026-06-02  project: slot-demo",      # frontmatter date (DOB omitted)
         "see arXiv 2310.13548 and 2401.04088",       # arXiv ids
         "standup at 3pm to discuss the build",       # plain prose
         "this line mentions an api_key in passing",  # keyword, no value
@@ -193,22 +182,22 @@ def _run_self_test() -> int:
         labels = scan_line(s)
         if not any(l not in _PII_KINDS for l in labels):
             fails += 1
-            print(f"  FAIL: expected a BLOCK, got {labels}: {s[:20]!r}...")
-    for s in must_warn:
+            print("  FAIL: expected secret block was not detected")
+    for s in must_pii:
         labels = scan_line(s)
-        if not labels or any(l not in _PII_KINDS for l in labels):
+        if not labels:
             fails += 1
-            print(f"  FAIL: expected WARN-only, got {labels}: {s!r}")
+            print("  FAIL: expected PII block was not detected")
     for s in must_clean:
         labels = scan_line(s)
         if labels:
             fails += 1
-            print(f"  FAIL: false positive {labels} on: {s!r}")
+            print("  FAIL: clean fixture produced a false positive")
     if fails:
         print(f"self-test: {fails} failure(s)")
         return 1
     print(
-        f"self-test: OK ({len(must_block)} block, {len(must_warn)} warn, "
+        f"self-test: OK ({len(must_block)} secret block, {len(must_pii)} PII block, "
         f"{len(must_clean)} clean)"
     )
     return 0

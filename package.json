@@ -12,10 +12,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:proof": "vitest run test/rng-stats.test.js test/rtp-target.test.js test/property.test.js",
     "test:watch": "vitest",
     "mutation": "node scripts/mutation-probe.mjs",
     "audit": "node scripts/audit-drift.mjs",
-    "demo:recurrence": "node scripts/recurrence-demo.mjs"
+    "smoke:browser": "node scripts/browser-smoke.mjs"
   },
   "dependencies": {
     "pixi-filters": "^6.1.4",

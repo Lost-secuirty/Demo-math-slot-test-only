@@ -20,6 +20,5 @@ To add one: copy `0000-template.md` to the next number, fill it in, set Status.
 | 0009 | AGENTS.md as the canonical cross-tool contract   | Accepted |
 | 0010 | Slot-math verification harness + computed RTP    | Accepted |
 | 0011 | Genuine 96% TOTAL RTP; remove demo nudges        | Accepted |
-| 0012 | Ported recurrence engine alongside the game      | Accepted |
 | 0013 | Metamorphic invariants for the slot math         | Accepted |
 | 0014 | Factual-wording policy (no cert/audit claims)    | Accepted |

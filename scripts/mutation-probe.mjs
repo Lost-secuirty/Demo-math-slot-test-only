@@ -93,14 +93,27 @@ const MUTATIONS = [
 function makeTemp() {
   const dir = mkdtempSync(join(tmpdir(), 'slot-mut-'));
   for (const item of COPY) cpSync(join(REPO, item), join(dir, item), { recursive: true });
-  symlinkSync(join(REPO, 'node_modules'), join(dir, 'node_modules'), 'dir');
+  symlinkSync(
+    join(REPO, 'node_modules'),
+    join(dir, 'node_modules'),
+    process.platform === 'win32' ? 'junction' : 'dir',
+  );
   return dir;
 }
 
 function runSuite(dir) {
-  const bin = join(dir, 'node_modules', '.bin', 'vitest');
-  const res = spawnSync(bin, ['run'], { cwd: dir, encoding: 'utf8', timeout: 180000 });
-  return res.status;
+  const bin = join(dir, 'node_modules', 'vitest', 'vitest.mjs');
+  const res = spawnSync(process.execPath, [bin, 'run'], {
+    cwd: dir,
+    encoding: 'utf8',
+    timeout: 180000,
+  });
+  return {
+    status: res.status,
+    stdout: res.stdout || '',
+    stderr: res.stderr || '',
+    error: res.error,
+  };
 }
 
 function run() {
@@ -113,8 +126,11 @@ function run() {
   } finally {
     rmSync(baseDir, { recursive: true, force: true });
   }
-  if (baseStatus !== 0) {
+  if (baseStatus.status !== 0) {
     console.error('BASELINE FAILED: the clean suite does not pass. Fix tests first.');
+    if (baseStatus.error) console.error(baseStatus.error);
+    if (baseStatus.stdout) console.error(baseStatus.stdout);
+    if (baseStatus.stderr) console.error(baseStatus.stderr);
     process.exit(1);
   }
   console.log('Baseline (clean suite) passed.\n');
@@ -135,8 +151,8 @@ function run() {
         return;
       }
       writeFileSync(path, source.replace(m.find, m.replace));
-      const status = runSuite(dir);
-      if (status !== 0) {
+      const result = runSuite(dir);
+      if (result.status !== 0) {
         killed++;
         console.log(`${String(i + 1).padStart(2)}. KILLED   | ${m.name}`);
       } else {

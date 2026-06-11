@@ -56,11 +56,11 @@ something.** Include the date and enough context to be useful later.
   12M headline are `===`-identical through the registry path; 107/107 green.
   Adding a feature is now: pure module + `registerFeature` + one renderer-map
   entry.
-- **Repo renamed `replit-code` → `Demo-math-slot-test-only` (Scott, 2026-06-11).**
+- **Repo renamed `Demo-math-slot-test-only` → `Demo-math-slot-test-only` (Scott, 2026-06-11).**
   Git remotes keep working (GitHub redirects), and the deployed app survives
   because `vite.config.js` uses `base: './'` — but **GitHub Pages URLs do NOT
   redirect**, so the README's live-demo link was dead until re-pointed at
-  `lostsoulfs.github.io/Demo-math-slot-test-only/`. ADR-0012's "replit-code"
+  `lostsoulfs.github.io/Demo-math-slot-test-only/`. ADR-0012's "Demo-math-slot-test-only"
   mention is a historical quote — left as-is (decision records keep their
   history). Lesson: after a repo rename, grep for the old name — Pages links
   and badges are the silent breakage.
@@ -211,26 +211,6 @@ Math.random)`, and animates the events (coin amounts x bet at render time).
 - **2026 GitHub convention for SECURITY.md:** point reporters at the repo
   Security tab → "Report a vulnerability" (private vulnerability reporting),
   explicitly say "no public issues," and state a response window.
-
-## 2026-06-05
-
-- **Ported the Health-Prototype recurrence engine** into `src/recurrence.js`
-  (+ `src/recurrenceData.js`, `test/recurrence.test.js`, `npm run
-demo:recurrence`). Pure logic, no Pixi — see ADR-0012. The
-  "librarian, not interpreter" firewall (surface/count/cite, never score or
-  diagnose) is carried into the header and asserted by a test.
-- **Two Python builtins had to be ported by hand to reproduce the oracle:**
-  - `difflib.SequenceMatcher.ratio()` — the opt-in fuzzy layer. Ported as
-    Ratcliff/Obershelp (`ratio = 2*M/T`, recursive longest-matching-block).
-    Sanity-checked against Python: ratio('blood presure','blood pressure') =
-    0.962963 (M=13, T=27). A naive similarity would NOT have matched the v1
-    answer key. (Autojunk/junk handling skipped — labels are far under the
-    200-element threshold.)
-  - `round()` is **banker's rounding** (round-half-to-even). R016's cadence
-    line depends on it: `round(9.5)` must be `10`, not `9`. JS `Math.round`
-    rounds half up and would diverge — use the `pyRound` helper.
-- **Verification that "works":** the JS `--report`/`--report-v1` output diffs
-  byte-for-byte against `python recurrence.py --report` in Health-Prototype.
 
 ## 2026-06-03
 

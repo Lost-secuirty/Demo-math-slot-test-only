@@ -22,7 +22,9 @@ npm run lint         # eslint (src, scripts, test, verify.mjs)
 npm run format       # prettier --write
 npm test             # vitest run (unit tests)
 npm run audit        # drift audit on the current branch (see docs/DRIFT-AUDIT.md)
-npm run demo:recurrence  # print the recurrence engine's report (see ADR-0012)
+npm run test:proof   # deterministic RNG, RTP, and property proof tests
+npm run mutation     # mutation probes for payout-sensitive logic
+npm run smoke:browser  # Playwright boot and console-error smoke
 ```
 
 ## Testing
@@ -45,9 +47,7 @@ npm run demo:recurrence  # print the recurrence engine's report (see ADR-0012)
   RTP-computation harness), `effects.js`, `ui.js`, `audio.js`, `debug.js`, and
   **`config.js` — all tunables live here.** The game self-computes a ~96% TOTAL
   RTP by simulation; retune `config.js` and recompute (`docs/PAR-SHEET.md`, `docs/adr/0011`).
-  Plus `recurrence.js` + `recurrenceData.js` — a domain-agnostic recurrence
-  engine, decoupled from the game (no Pixi, no game wiring); see ADR-0012.
-- **`scripts/audit-drift.mjs`**, **`scripts/recurrence-demo.mjs`**, **`test/`**,
+- **`scripts/audit-drift.mjs`**, **`scripts/browser-smoke.mjs`**, **`test/`**,
   **`verify.mjs`**, **`docs/`** (`SPEC.md`, `adr/`, `LEARNINGS.md`,
   `DRIFT-AUDIT.md`, `AGENT-SCAFFOLDING.md`).
 - **Secret/PII gate:** `tools/scan_staged.py` + `.githooks/pre-commit` block
