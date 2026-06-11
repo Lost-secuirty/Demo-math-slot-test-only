@@ -47,9 +47,18 @@ for non-3×3 shapes is explicitly a later visuals pass.
   assertions, no tuned RTP claims for non-default shapes).
 - The default game is unchanged: explicit dims equal the inferred ones at 3×3,
   RNG draw order is untouched, and the seeded RTP pin holds to full precision.
-- Config consistency is asserted (`test/config.test.js`): every payline's
-  length equals `GRID.reels`, every row index is within `GRID.rows`, and the
-  model's dims equal `GRID`'s.
+- Config consistency is asserted: every payline's length equals `GRID.reels`
+  and every row index is within `GRID.rows` (`test/config.test.js`); the
+  model's explicit dims equal `GRID`'s and the payline-inferred values
+  (`test/nbym.test.js`).
+- The strip-window index math — the payout-load-bearing seam where the spin
+  writes the outcome into the reel strip and the evaluated grid is read back
+  out — now lives in pure `src/reelWindow.js`, with the write/read pair
+  pinned as **exact inverses** for 1–6 rows including wrap-around, plus a
+  headless outcome→strip→readback→`evaluate()` payout test
+  (`test/reelWindow.test.js`). This matters because the Playwright smoke
+  runs neither in this container nor in CI, so the render path's only
+  executable check is this pure extraction.
 - **Known follow-up (visuals pass):** `GRID.x/y` and frame/banner geometry are
   hand-centered for 3×3; non-3×3 renders off-center until layout auto-derives
   from dims. Deferred on purpose to keep this diff purely logical.

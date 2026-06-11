@@ -11,6 +11,7 @@
 
 import { Container, Sprite, Graphics, BlurFilter } from 'pixi.js';
 import { GRID, SPIN, SYMBOLS, SYMBOL_WEIGHTS, TIME } from './config.js';
+import { mod, writeOutcome, visibleFromStrip } from './reelWindow.js';
 
 const CELL = GRID.symbolSize + GRID.gap;
 const ROWS = GRID.rows;
@@ -33,7 +34,6 @@ function weightedRandom(pool = ALL_IDS) {
   return pool[pool.length - 1];
 }
 
-const mod = (n, m) => ((n % m) + m) % m;
 // easeOutBack — overshoots then settles, giving the reel-stop bounce
 function easeOutBack(t) {
   const c1 = 1.70158,
@@ -104,11 +104,9 @@ class Reel {
       this._pendingOutcome || Array.from({ length: ROWS }, () => weightedRandom(SPINNABLE));
     const travel = 6 + this.index * 1.5 + Math.random() * 2;
     const target = Math.ceil(this.pos + travel);
-    // at integer target: visible row k (0=top … ROWS-1=bottom) is
-    // strip[target + ROWS - k].
-    for (let k = 0; k < ROWS; k++) {
-      this.strip[mod(target + ROWS - k, STRIP_LEN)] = out[k];
-    }
+    // land the outcome in the strip slice visible at `target`
+    // (pure index math + the inverse readback live in reelWindow.js)
+    writeOutcome(this.strip, target, ROWS, out);
     // fill the approach with filler so neighbours look natural
     for (let k = 1; k <= 4; k++) this.strip[mod(target + ROWS + k, STRIP_LEN)] = weightedRandom();
     this.stopFrom = this.pos;
@@ -157,8 +155,7 @@ class Reel {
 
   getVisible() {
     const base = this.stopTarget != null ? this.stopTarget : Math.round(this.pos);
-    // [top, …, bottom] — visible row k is strip[base + ROWS - k]
-    return Array.from({ length: ROWS }, (_, k) => this.strip[mod(base + ROWS - k, STRIP_LEN)]);
+    return visibleFromStrip(this.strip, base, ROWS); // [top … bottom]
   }
 
   // world position (within reels container) of a visible cell centre

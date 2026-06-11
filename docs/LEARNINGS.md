@@ -8,6 +8,22 @@ something.** Include the date and enough context to be useful later.
 
 ## 2026-06-11
 
+- **Coverage finding: the rendered payout path had NO executable check anywhere.**
+  Review of PR #18 surfaced that `evaluate()` scores the grid read back from
+  the reel strips (`reels.spin()` → `getGrid()` → `getVisible()`), NOT the
+  pre-committed outcome object — so the strip write/readback is
+  payout-load-bearing. Meanwhile `verify.mjs` (Playwright smoke) runs in **no
+  CI workflow** (ci.yml = lint+test+build only) and is blocked locally by the
+  container network policy — i.e. the entire render path shipped on reasoning
+  - "build succeeds". Fix folded into #18: extracted the strip-window index
+    math into pure `src/reelWindow.js` (`mod`, `writeOutcome`,
+    `visibleFromStrip`; reels.js delegates) and added
+    `test/reelWindow.test.js` — write/read pinned as exact inverses for 1–6
+    rows incl. wrap-around + only-touches-`rows`-slots, the pre-refactor
+    unrolled ROWS=3 indices asserted verbatim, and a headless
+    outcome→strip→readback→`evaluate()` test proving a planted win and planted
+    coin cells survive the round-trip and pay exactly. Follow-up worth doing
+    someday: run the smoke in CI (needs Playwright browser install there).
 - **Phase 2/PR A — grid is model-driven N×M (ADR-0015); default 3×3 byte-identical.**
   Two implicit dimension sources existed (renderer read `GRID.reels/rows`; math
   _inferred_ dims from PAYLINES). Now `defaultModel()` carries explicit
