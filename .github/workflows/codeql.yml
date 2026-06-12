@@ -7,6 +7,11 @@ on:
   schedule:
     - cron: "41 7 * * 1"
 
+# Cancel superseded PR runs, but never a scheduled scan.
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
   security-events: write
@@ -14,6 +19,7 @@ permissions:
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:

@@ -1,6 +1,10 @@
 dist
 node_modules
+coverage
 package-lock.json
 shot-*.png
 .github/
 *.ndjson
+.pre-commit-config.yaml
+.yamllint.yml
+.gitleaks.toml

@@ -1,1 +1,3 @@
 docs/audit-history.ndjson merge=union
+*.sh text eol=lf
+.githooks/* text eol=lf

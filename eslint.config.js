@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import prettier from 'eslint-config-prettier';
+import security from 'eslint-plugin-security';
 
 // Footgun rules — lessons from docs/LEARNINGS.md promoted to executable
 // checks (a lesson isn't learned until a machine enforces it). Each entry
@@ -50,6 +51,7 @@ const storageFootguns = [
 export default [
   { ignores: ['dist', 'node_modules'] },
   js.configs.recommended,
+  security.configs.recommended,
   {
     files: ['**/*.{js,mjs}'],
     languageOptions: {
@@ -60,6 +62,8 @@ export default [
     rules: {
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-console': 'off',
+      // Dynamic symbol/paytable maps are core domain data, not attacker-controlled keys.
+      'security/detect-object-injection': 'off',
     },
   },
   // persist.js is exempt from the storage rules only — flat config replaces

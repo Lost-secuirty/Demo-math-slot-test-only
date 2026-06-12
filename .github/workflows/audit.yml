@@ -2,27 +2,30 @@ name: Drift Audit
 
 # Audits every PR for "drift" — divergence between what was logged (commits,
 # PR body, docs/LEARNINGS.md) and what the diff actually did — using a
-# deterministic Node script. NO API key required: it posts via the built-in
-# GITHUB_TOKEN and applies only safe formatting/lint auto-fixes.
+# deterministic Node script. NO API key required. The workflow is read-only:
+# it reports drift without mutating the pull-request branch.
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+concurrency:
+  group: audit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
-  contents: write # push safe auto-fixes back to the PR branch
-  pull-requests: write # post the audit report comment
+  contents: read
+  pull-requests: write # downgraded to read for fork pull requests
 
 jobs:
   audit:
     runs-on: ubuntu-latest
-    # GITHUB_TOKEN is read-only for fork PRs, so skip them (can't comment/push).
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
@@ -30,23 +33,25 @@ jobs:
           cache: npm
       - run: npm ci
 
-      - name: Run drift audit (with safe auto-fix + history)
+      - name: Run read-only drift audit
         env:
           GITHUB_PR_BODY: ${{ github.event.pull_request.body }}
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }} # via env (same injection posture)
           BASE_REF: ${{ github.base_ref }} # via env, not inline, to avoid template injection
-        run: node scripts/audit-drift.mjs --base "origin/${BASE_REF}" --head HEAD --fix --run-checks --history docs/audit-history.ndjson
-
-      - name: Commit & push auto-fixes + history (if any)
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -am "audit: auto-fix + history"
-            git push
-          fi
+        run: node scripts/audit-drift.mjs --base "origin/${BASE_REF}" --head HEAD --run-checks --strict
 
       - name: Post audit report comment
+        if: github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file audit-report.md
+          PR_NUMBER: ${{ github.event.pull_request.number }} # via env (same injection posture)
+        run: gh pr comment "$PR_NUMBER" --body-file audit-report.md
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
+        with:
+          name: drift-audit-${{ github.event.pull_request.number }}
+          path: audit-report.md
+          if-no-files-found: error
+          retention-days: 30

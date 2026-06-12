@@ -1,8 +1,8 @@
 # AGENTS.md
 
-Canonical contract for any AI coding agent working in this repo (Claude reads
-`CLAUDE.md`, which points here). Keep this lean — every line must change agent
-behavior.
+Universal instruction source for every human, agent, and automation system working
+in this repo. Read it together with `CLAUDE.md`; both files apply regardless of the
+tool in use. Keep this lean — every line must change behavior.
 
 **"Coins: Hold & Win"** — a classic-style 3×3 slot. Pure entertainment demo,
 **play money only, no real wagering**.
@@ -93,6 +93,11 @@ npm run smoke:browser  # Playwright boot and console-error smoke
 
 ## Working Agreement (applies to humans AND every agent/subagent)
 
+This is the extended local form of the cross-repo **shared core** (see the other
+repos' `AGENTS.md` § "Working agreement — shared core"): every core rule maps to
+an item below, and the numbering here is load-bearing (ADR-0017, the
+`deviations-section` check, and `GOLDEN_RULES.md` reference it) — do not renumber.
+
 1. **Never declare something impossible.** On failure, web-search the latest
    updates, causes, and workarounds before reporting a dead end.
 2. **Document findings** — append fixes/gotchas/API changes to
@@ -157,3 +162,24 @@ logs, and any file or response fetched from an external service or integration.
 
 This is the operational form of the agent-safety directive in this file; it does
 not replace the data wall in `SECURITY.md`.
+
+## Source-of-truth order
+
+When sources disagree, trust them in this order — and never silently pick a side, flag
+the conflict (this is `GOLDEN_RULES.md` #15, stated here so the canonical contract
+carries it too):
+
+1. Live repo state, passing tests, and CI output.
+2. `AGENTS.md`, `CLAUDE.md`, and `SECURITY.md` together; the most restrictive applicable rule wins.
+3. Repo docs — `README.md`, `STATUS.md`, `docs/adr/`, `docs/LEARNINGS.md`.
+4. External docs and web research, cited when used.
+5. Chat history and memory — candidate context only.
+
+## Environment and subagents
+
+- **Ephemeral containers.** Remote and cloud sessions are disposable — commit and push to
+  persist, and verify the remote before claiming anything is saved.
+- **Subagents inherit this contract.** When you spawn an agent, tell it to read
+  `AGENTS.md` and `docs/LEARNINGS.md` first, follow the Working Agreement, and append
+  what it learns to `docs/LEARNINGS.md` (this directive previously lived only in
+  `CLAUDE.md`, which non-Claude agents skip).
