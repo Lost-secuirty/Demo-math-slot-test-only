@@ -9,8 +9,8 @@ file=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null
 [ -f "$file" ] || exit 0
 
 case "$file" in
-  *.js | *.mjs | *.json | *.md | *.css | *.html)
-    npx prettier --write "$file" >/dev/null 2>&1 || true
-    ;;
+*.js | *.mjs | *.json | *.md | *.css | *.html)
+  npx prettier --write "$file" >/dev/null 2>&1 || true
+  ;;
 esac
 exit 0

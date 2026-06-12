@@ -10,9 +10,9 @@ dir="${CLAUDE_PROJECT_DIR:-.}/.claude/logs"
 mkdir -p "$dir"
 
 tool=$(printf '%s' "$input" | jq -r '.tool_name // "?"' 2>/dev/null || echo '?')
-ok=$(printf '%s' "$input" \
-  | jq -r 'if (.tool_response.success == false) then "false" else "true" end' 2>/dev/null \
-  || echo 'true')
+ok=$(printf '%s' "$input" |
+  jq -r 'if (.tool_response.success == false) then "false" else "true" end' 2>/dev/null ||
+  echo 'true')
 ts=$(date -u +%FT%TZ)
 
 printf '{"ts":"%s","tool":"%s","ok":%s}\n' "$ts" "$tool" "$ok" >>"$dir/events.jsonl"

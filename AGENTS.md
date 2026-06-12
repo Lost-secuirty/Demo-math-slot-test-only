@@ -1,8 +1,8 @@
 # AGENTS.md
 
-Canonical contract for any AI coding agent working in this repo (Claude reads
-`CLAUDE.md`, which points here). Keep this lean — every line must change agent
-behavior.
+Universal instruction source for every human, agent, and automation system working
+in this repo. Read it together with `CLAUDE.md`; both files apply regardless of the
+tool in use. Keep this lean — every line must change behavior.
 
 **"Coins: Hold & Win"** — a classic-style 3×3 slot. Pure entertainment demo,
 **play money only, no real wagering**.
@@ -170,7 +170,7 @@ the conflict (this is `GOLDEN_RULES.md` #15, stated here so the canonical contra
 carries it too):
 
 1. Live repo state, passing tests, and CI output.
-2. `AGENTS.md`, then `SECURITY.md`, then tool-specific files such as `CLAUDE.md`.
+2. `AGENTS.md`, `CLAUDE.md`, and `SECURITY.md` together; the most restrictive applicable rule wins.
 3. Repo docs — `README.md`, `STATUS.md`, `docs/adr/`, `docs/LEARNINGS.md`.
 4. External docs and web research, cited when used.
 5. Chat history and memory — candidate context only.

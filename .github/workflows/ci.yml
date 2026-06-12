@@ -7,6 +7,9 @@ on:
   push:
     branches: [main, 'claude/**']
   pull_request:
+  schedule:
+    - cron: "31 3 * * 6"
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -18,6 +21,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -27,17 +31,29 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm run format:check
       - run: npm run lint
       - run: npm test
       - run: npm run test:proof
+      - run: npm run test:coverage
       - run: npm run mutation
+      - run: npm audit --audit-level=high
       - run: npm run build
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
+        with:
+          name: demo-math-coverage
+          path: coverage
+          if-no-files-found: error
+          retention-days: 30
 
   # Rendered-app smoke (verify.mjs): boot, spin, win credit, 0 console
   # errors. Runs HERE because the dev container's network policy blocks
   # the Playwright browser download — CI is where this can execute.
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
