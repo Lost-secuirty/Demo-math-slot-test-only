@@ -13,11 +13,11 @@ evergreen rules to `GOLDEN_RULES.md`, mark superseded entries historical.
 
 ## 2026-06-11 — audit-loop mechanics + cross-repo rollout (PR #28)
 
-- **Judge PRs by the last human commit, not the bot head.** Every PR here ends
-  on a `github-actions[bot]` "audit: auto-fix + history" head commit, and
-  `GITHUB_TOKEN` pushes create _held_ (`action_required`) workflow runs — so
-  the bot head shows no green checks. The real validation lives one commit
-  back; approve-and-run the held runs if a green head is wanted.
+- **Historical audit-loop failure (superseded by PR #28).** The old audit
+  workflow pushed `github-actions[bot]` auto-fix/history commits, which left
+  held (`action_required`) runs and hid the last human commit's check state.
+  PR #28 made the audit read-only: PR automation must not mutate the branch,
+  and the exact latest human SHA must be green before merge.
 - **The Working Agreement here is the extended local superset** of the shared
   core now in the other repos' `AGENTS.md`. The numbering (especially #8/#9)
   is load-bearing — ADR-0017, the `deviations-section` check, and
@@ -448,20 +448,6 @@ Math.random)`, and animates the events (coin amounts x bet at render time).
     chance into `config.js` (`BONUS.jackpotOdds`, `BONUS.respinLandChance`); both
     `holdAndWin.js` (live) and `slotmath.js` (model) read them, so model == game.
 
-- **Slot-math verification harness** (`src/slotmath.js`, pure, no Pixi): exact
-  `theoreticalRtp()` by payline enumeration + seeded `monteCarloLine/FullGame()`
-  with a 95% CI + `parSheet()`. Method mirrors how labs (GLI-19/eCOGRA/iTech)
-  certify: theoretical vs Monte-Carlo must converge (theory inside the CI).
-  Certified figures live in `docs/PAR-SHEET.md`. _(Superseded by the top
-  2026-06-02 entry + ADR-0011: the default game was retuned to a genuine 96%
-  TOTAL and the `RTP96` preset removed. Historical: demo base RTP was 91.22%.)_
-
-- **(Historical — superseded by ADR-0011.)** The Hold & Win bonus never triggered
-  _naturally_ in the old demo config (coin ~5.6%/cell → P(6+ of 9) ≈ 0); its
-  liveliness came from a `DEMO.bonusChance` forced trigger. The retune raised the
-  coin weight (~25%/cell) and folded the feature into the certified total via
-  `monteCarloFullGame()` — exactly the "real-money build" path noted here.
-
 - **Seed Monte-Carlo & statistical tests with mulberry32** (`test/helpers/`): a
   fixed seed makes every statistic deterministic → no flaky CI. Drive code that
   calls the global `Math.random` (`outcome.js`, `utils.weightedPick`) via
@@ -504,40 +490,8 @@ Math.random)`, and animates the events (coin amounts x bet at render time).
   worth once the logic was proven correct. Prove the logic, scope the test to
   what the environment can reliably observe, and document the gap.
 
-## 2026-06-01
+## Archive index
 
-- **PR drift audit is free without an API key.** `scripts/audit-drift.mjs` is a
-  dependency-free deterministic auditor; CI (`.github/workflows/audit.yml`)
-  posts via the built-in `GITHUB_TOKEN` and applies only safe auto-fixes
-  (prettier / eslint --fix). Semantic claim-vs-code review is done by the
-  in-session auditor (runs on the session, also free). The paid Anthropic API
-  was only ever needed for semantic checks _in CI_ — skipped. See
-  `docs/DRIFT-AUDIT.md`. GitHub Actions pushes made with `GITHUB_TOKEN` do not
-  retrigger workflows, so the auto-fix commit can't cause an audit loop. Fork
-  PRs get a read-only token, so the job is gated to same-repo PRs.
-
-- **Pixi v8 `renderer.generateTexture({ frame })` needs a `Rectangle` instance**,
-  not a plain `{ x, y, width, height }` object. Passing a plain object throws
-  `e.frame?.copyTo is not a function`. Fix: `import { Rectangle } from 'pixi.js'`
-  and pass `new Rectangle(0, 0, w, h)`. (Hit in `src/symbols.js`, `src/effects.js`.)
-
-- **Headless/CI Chromium uses software WebGL (SwiftShader)** with no GPU/vsync,
-  so `app.ticker.FPS` reads absurdly low there. Do **not** treat low FPS in a
-  headless container as a perf regression — verify smoothness on a real GPU.
-
-- **GitHub Pages deploy requires Pages to be enabled** (repo Settings → Pages →
-  Source: "GitHub Actions"). On a **private** repo it also needs a paid plan.
-  The workflow (`.github/workflows/deploy.yml`) therefore always uploads a
-  downloadable `slot-build` artifact and only attempts the Pages deploy when
-  Pages is configured, so CI stays green regardless of plan.
-
-- **Reel determinism** (`src/reels.js`): the outcome is decided first, then the
-  strip slice that will be visible at the integer stop position is overwritten
-  and eased into with `easeOutBack` (gives the bounce). Motion blur scales with
-  reel speed via a `BlurFilter`.
-
-- **Registering a SessionStart hook is gated by the harness.** Writing
-  `.claude/settings.json` (hook registration and/or permission allow-rules) is
-  treated as self-modification and is blocked unless the user explicitly
-  authorizes it / adds the permission rule themselves. The hook _script_ can be
-  created freely; only the settings registration needs user action.
+Superseded and older entries remain available in
+[`LEARNINGS-archive.md`](LEARNINGS-archive.md). Moving them out of the hot path
+is a retrieval decision, not a deletion or rewrite of project history.

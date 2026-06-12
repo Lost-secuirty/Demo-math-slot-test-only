@@ -54,6 +54,10 @@ The distilled cheat-sheet for working in this repo, derived from this repo's
 12. **Keep pure logic separate from render** — no-Pixi modules stay
     unit-testable (`wins`, `outcome`, `slotmath`); all tunables
     live in `config.js`, never hard-coded. _(AGENTS · Code style)_
+    - Pixi v8 `renderer.generateTexture({ frame })` requires a real
+      `Rectangle`, not a plain frame-shaped object.
+    - Headless Chromium uses software WebGL; do not call low container FPS a
+      performance regression without verification on a real GPU.
 13. **Respect the boundaries** — don't hand-edit generated files
     (`package-lock.json`, `dist/`, `node_modules/`); change `.claude/` settings
     and hooks only when explicitly asked; assets are procedural (no binary
@@ -63,6 +67,8 @@ The distilled cheat-sheet for working in this repo, derived from this repo's
 14. **Git hygiene** — work on a feature branch, never straight to `main`;
     conventional, imperative commits with a short "why"; open a **draft PR**;
     keep the tree clean and pushed. _(AGENTS · Git workflow)_
+    - PR audits are read-only. Automation must not push bot commits that hide
+      the latest human SHA's check state.
 
 ## Truth & judgment
 
