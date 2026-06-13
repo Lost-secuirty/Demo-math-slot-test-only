@@ -11,6 +11,36 @@ evergreen rules to `GOLDEN_RULES.md`, mark superseded entries historical.
 
 ---
 
+## 2026-06-13 — Slot-bundle salvage cross-check (read-only sweep; info for a future PR)
+
+A ChatGPT-side session bundle (`dice_slot_session_bundle.zip`) held an earlier
+Python slot build (`slot_machine.py` + a 44-test harness). Swept for anything
+worth pulling into the math repo. **Verdict: the testing discipline is already
+here and stronger — nothing to port.** This entry is forward-looking info only;
+no code/tests changed in the PR that carries it.
+
+- **Already covered + surpassed.** The bundle's exact-known-answer payouts,
+  exhaustive enumeration, seeded Monte-Carlo, and RNG isolation are all present
+  and more rigorous here: exact payline enumeration → seeded Monte-Carlo in
+  `test/rtp-target.test.js` + `test/slotmath.test.js` (the latter's header even
+  records it was ported from a _newer_ `slot_machine_v2_weighted.py`), plus
+  `test/property.test.js` (property/fuzz), `test/metamorphic.test.js` (invariance
+  relations), `test/rng-stats.test.js` (chi-square/KS/runs/serial-correlation +
+  seed-replay), and the `withSeededRandom` isolation helper in
+  `test/helpers/seededRng.js`. Re-porting any of it would be cargo-culting.
+- **Two genuine future-expansion candidates (for a later, separate PR — not now):**
+  1. **Durable/previous-good wrapper for `src/persist.js`** — schema-version tag +
+     validate-on-read + one previous-good copy + an _observable_ (non-silent)
+     fallback. This is the salvageable essence of the slot build's
+     main+backup+manifest recovery, right-sized (no `fsync`/manifest machinery in
+     a browser). The same pattern is landing in Codex `src/lib/storage.ts`; mirror
+     it here only if/when persisted state becomes load-bearing.
+  2. **A suite-wide determinism gate (test-order shuffle + perturbed clock/seed)** —
+     mirroring the gate Codex is adding. This repo's many property/statistical
+     tests are a natural home for latent order-dependence; a shuffle gate would
+     fail loud on any non-hermetic test. `rng-stats`/`seededRng` already give RNG
+     determinism, but not _suite-wide_ order independence.
+
 ## 2026-06-11 — audit-loop mechanics + cross-repo rollout (PR #28)
 
 - **Historical audit-loop failure (superseded by PR #28).** The old audit
