@@ -1,0 +1,40 @@
+{
+  "protocolVersion": "0.3.0",
+  "name": "coins-hold-and-win-math",
+  "description": "Static A2A discovery card for the deterministic slot-math capabilities of the Coins: Hold & Win play-money demo (no real money, no accounts, no AI/LLM runtime). NO LIVE A2A ENDPOINT YET: this is a phase-A discovery card; the skills below describe deterministic functions runnable from this repo's source (src/slotmath.js). See STATUS.md and docs/adr/0019-agent-interop-static-surface.md.",
+  "version": "0.1.0",
+  "url": "https://lostsoulfs.github.io/Demo-math-slot-test-only/",
+  "documentationUrl": "https://github.com/Lost-secuirty/Demo-math-slot-test-only/blob/main/STATUS.md",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false
+  },
+  "defaultInputModes": ["application/json"],
+  "defaultOutputModes": ["application/json"],
+  "securitySchemes": {},
+  "skills": [
+    {
+      "id": "verify-rtp",
+      "name": "Verify RTP (exact)",
+      "description": "Compute the exact theoretical return-to-player, house edge, per-line hit frequency, standard deviation, and jackpot odds for the play-money model by full payline enumeration. Deterministic: no RNG, no network. Implemented by theoreticalRtp() / parSheet() in src/slotmath.js.",
+      "tags": ["slot-math", "rtp", "deterministic", "play-money"],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "simulate-rtp",
+      "name": "Simulate RTP (seeded Monte-Carlo)",
+      "description": "Run a seeded Monte-Carlo simulation of the full game (base lines plus the Hold & Win feature) and return total RTP with a 95% confidence interval, the line/bonus RTP split, hit frequency, and bonus-trigger and grand-jackpot rates. Deterministic for a given seed. Implemented by monteCarloFullGame() in src/slotmath.js.",
+      "tags": ["slot-math", "rtp", "monte-carlo", "play-money"],
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json"]
+    }
+  ],
+  "x-lifecycle": {
+    "status": "growing",
+    "frozen": false,
+    "interopPhase": "A",
+    "liveEndpoint": false,
+    "note": "Growing until explicitly frozen (see STATUS.md). Phase A is a static discovery card only: no live A2A/MCP endpoint and no authentication. A live endpoint plus machine-to-machine auth is deferred (phase B)."
+  }
+}
