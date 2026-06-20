@@ -23,7 +23,13 @@
     ".github/control-policy.json",
     ".github/workflows/controls.yml",
     ".github/workflows/scan.yml",
-    ".github/dependabot.yml"
+    ".github/dependabot.yml",
+    "STATUS.md",
+    "docs/adr/0019-agent-interop-static-surface.md",
+    "docs/kb/agent-interop.md",
+    "public/.well-known/agent-card.json",
+    "tools/mcp/tools.json",
+    "scripts/agent-card-validate.mjs"
   ],
   "required_workflows": [
     "repository-controls",
