@@ -1,0 +1,85 @@
+{
+  "$comment": "Static MCP tool definitions for this repo's deterministic slot-math capabilities. Phase A: there is NO live MCP server (see docs/adr/0019-agent-interop-static-surface.md). Each tool maps 1:1 to an export in src/slotmath.js; the schemas mirror those functions' real signatures and return shapes.",
+  "mcpVersion": "2025-06-18",
+  "tools": [
+    {
+      "name": "verify_rtp",
+      "title": "Verify RTP (exact)",
+      "description": "Compute exact theoretical RTP, house edge, per-line hit frequency, standard deviation, and jackpot odds by full payline enumeration. Deterministic; no RNG, no network. Wraps theoreticalRtp(buildModel(modelOverrides)) and parSheet() in src/slotmath.js.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "modelOverrides": {
+            "type": "object",
+            "description": "Optional partial model overrides merged via buildModel() (e.g. { weights, paytable }). Omit for the default model."
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "perLineRtp": { "type": "number" },
+          "lineRtp": { "type": "number" },
+          "houseEdge": { "type": "number" },
+          "hitFrequencyPerLine": { "type": "number" },
+          "sdPerLine": { "type": "number" },
+          "jackpotProb": { "type": "number" },
+          "jackpotOneIn": { "type": "number" },
+          "nLines": { "type": "integer" },
+          "symbolProbabilities": {
+            "type": "object",
+            "description": "Map of symbol id -> probability."
+          }
+        },
+        "required": ["perLineRtp", "lineRtp", "houseEdge", "nLines"]
+      }
+    },
+    {
+      "name": "simulate_rtp",
+      "title": "Simulate RTP (seeded Monte-Carlo)",
+      "description": "Run a seeded Monte-Carlo simulation of the full game and return RTP with a 95% confidence interval, the line/bonus split, hit frequency, and bonus-trigger and grand rates. Deterministic for a given seed. Wraps monteCarloFullGame(buildModel(modelOverrides), { seed, spins }) in src/slotmath.js.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "seed": {
+            "type": "integer",
+            "default": 12345,
+            "description": "RNG seed (mulberry32). The same seed yields an identical result."
+          },
+          "spins": {
+            "type": "integer",
+            "default": 1000000,
+            "minimum": 1,
+            "description": "Number of simulated spins."
+          },
+          "modelOverrides": {
+            "type": "object",
+            "description": "Optional partial model overrides merged via buildModel()."
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "spins": { "type": "integer" },
+          "seed": { "type": "integer" },
+          "rtp": { "type": "number" },
+          "lineRtp": { "type": "number" },
+          "bonusRtp": { "type": "number" },
+          "hitFrequency": { "type": "number" },
+          "bonusTriggerRate": { "type": "number" },
+          "bonusTriggerOneIn": { "type": "number" },
+          "grandRate": { "type": "number" },
+          "maxWin": { "type": "number" },
+          "sd": { "type": "number" },
+          "ci95Low": { "type": "number" },
+          "ci95High": { "type": "number" },
+          "ci95HalfwidthPp": { "type": "number" }
+        },
+        "required": ["rtp", "ci95Low", "ci95High", "spins", "seed"]
+      }
+    }
+  ]
+}

@@ -30,11 +30,13 @@ what every model already knows.
 This repo's stack (ADRs 0001–0008): vanilla ES modules + PixiJS v8 + Vite + Vitest +
 ESLint/Prettier + Playwright + WebAudio. Sheets are created **as facts are verified** — copy
 `TEMPLATE.md`, add the row here, fill from real runs (no fabrication, no importing another
-repo's stack sheets). Starts empty:
+repo's stack sheets).
 
-| Sheet                                                                                              | Covers | Pinned at |
-| -------------------------------------------------------------------------------------------------- | ------ | --------- |
-| _(none yet — create on first verified gotcha; candidates: pixi-8, vite, vitest, eslint, webaudio)_ |        |           |
+| Sheet                                | Covers                                               | Pinned at                 |
+| ------------------------------------ | ---------------------------------------------------- | ------------------------- |
+| [agent-interop.md](agent-interop.md) | A2A Agent Card + MCP tool-defs — this repo's surface | A2A v1.0 / MCP 2025-06-18 |
+
+_More stack sheets created on first verified gotcha (candidates: pixi-8, vite, vitest, eslint, webaudio)._
 
 ## Journals
 
