@@ -6,6 +6,9 @@
 > RTP and statistics shown are computed by this project's own simulation, for
 > transparency. See [`DISCLAIMER.md`](DISCLAIMER.md).
 
+> **Status: growing, not frozen.** Actively developed — features and governance
+> keep changing until an explicit freeze. See [`STATUS.md`](STATUS.md).
+
 A flashy, **buttery-smooth** classic-style 3×3 slot machine, built with **PixiJS v8 (WebGL)** so it stays at 60fps even with glow, particles, and screen shake piled on.
 
 ## Features
