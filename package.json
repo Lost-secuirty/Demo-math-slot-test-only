@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "mutation": "node scripts/mutation-probe.mjs",
     "audit": "node scripts/audit-drift.mjs",
+    "agent-card": "node scripts/agent-card-validate.mjs",
     "smoke:browser": "node scripts/browser-smoke.mjs",
     "smoke:browser:planted": "node scripts/browser-smoke.mjs --planted-bad=settings-open"
   },
