@@ -112,8 +112,13 @@ This is the single most-confused point, so state it plainly:
 > what actually reported on the head SHA. A `BLOCKED` PR with every visible check
 > green, no failures, and zero unresolved threads is almost always an absent
 > required context. Fixes: make the producer reliably post, nudge it
-> (`@coderabbitai review`), or stop requiring a context nothing produces. Never
-> "fix" it by lowering the gate without understanding why it's absent.
+> (`@coderabbitai review`), **re-fire the producing event** (a pushed
+> `synchronize` does not always create runs — close + reopen the PR to fire
+> `reopened`, in every workflow's trigger types), or stop requiring a context
+> nothing produces. First confirm runs actually exist on the head SHA
+> (`actions/runs?head_sha=…` → `total_count`); a "trigger" push that yields zero
+> runs leaves you exactly where you started. Never "fix" it by lowering the gate
+> without understanding why it's absent.
 
 ---
 
@@ -151,7 +156,7 @@ deploy"). Only the GITHUB_TOKEN-created-PR case applies to our auto-fix audits.
 
 ---
 
-## Worked examples (real, this org, 2026-06-20)
+## Worked examples (real, this org, 2026-06)
 
 1. **Absent-required (CodeRabbit).** Demo-math `#40` (a Dependabot PR) was
    `BLOCKED` with `mergeable=MERGEABLE`, every other check green, **zero**
@@ -176,6 +181,18 @@ history`, moving the head off the human commit. The new head's CI/scan/audit
    bump (→ 2.14.2), not anything in the PRs it was blocking — diagnose the check,
    don't assume the diff.
 
+4. **Absent-required via `synchronize` no-show (Demo-math `#42` — this doc's own
+   PR).** `#42` sat `BLOCKED` with only `CodeRabbit` + `SonarCloud` green. The six
+   required GitHub Actions had run on the `opened` head but produced **zero** runs
+   when the head moved: both a base-merge commit and a fresh pushed commit
+   (`synchronize`) created no checks at all (`actions/runs?head_sha=…` →
+   `total_count: 0`), so the contexts sat "Expected" forever. Here the gating runs
+   fire on `opened`/`reopened`, **not reliably on `synchronize`** — a "trigger"
+   push did nothing. **Close + reopen** (fires `reopened`, which every required
+   workflow lists) created all six on the live head → `BLOCKED → CLEAN`. Note
+   un-drafting is **not** the lever: `ready_for_review` only triggers `controls`
+   here, not `ci`/`audit`/`scan`/`codeql`/`dependency-review`.
+
 ---
 
 ## Per-repo appendix (required contexts + quirks)
@@ -188,14 +205,14 @@ gh api repos/Lost-secuirty/<repo>/branches/main/protection --jq '.required_statu
 gh pr view <n> -R Lost-secuirty/<repo> --json mergeStateStatus,statusCheckRollup
 ```
 
-| Repo                     | strict / conv-resolution | Required contexts (live set wins)                                                                                                                                                                                                   | Quirk to know                                                                                                               |
-| ------------------------ | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Codex-Speed-Test         | no / no                  | `audit`, `browser`, `checks`, `scan`, `smoke`, `CodeRabbit`                                                                                                                                                                         | `audit.yml` auto-fixes & pushes → `action_required` held bot-commit each PR                                                 |
-| Demo-math-slot-test-only | yes / yes                | `analyze`, `audit`, `check`, `review`, `scan`, `smoke`, `CodeQL`, `CodeRabbit`, `Instruction and control audit`, `Pre-commit gates`, `Secret and dependency scan`, `Workflow and shell lint`                                        | `check` runs `prettier --check .` minus `.prettierignore` (excludes `.github/` + config dotfiles); `audit.yml` is read-only |
-| Pharmacy-App             | yes / yes                | `analyze`, `lint`, `repo-health`, `review`, `scan`, `test (3.11–3.14)`, `CodeQL`, `CodeRabbit`, `Instruction and control audit`, `Pre-commit gates`, `Secret and dependency scan`, `Workflow and shell lint`                        | Tkinter/SQLite app; CodeRabbit posts a legacy commit-status                                                                 |
-| testing-kits             | yes / yes                | `analyze`, `review`, `scan`, `unittest (3.10–3.14)`, `CodeQL`, `CodeRabbit`, `Instruction and control audit`, `Package, install, and dependency audit`, `Pre-commit gates`, `Secret and dependency scan`, `Workflow and shell lint` | Canonical source repo for this doc; SonarCloud "new code" fails are usually fixture-by-design                               |
-| Health-Prototype         | yes / yes                | `lint`, `test (3.10–3.13)`, `sensitive-scan`, `dependency-review`, `Analyze (actions)`, `Analyze (python)`, `CodeQL`, `CodeRabbit`                                                                                                  | CodeQL is **default setup** — `Analyze (...)`/`CodeQL` post with **no** workflow file in `.github/workflows`                |
-| DEP-TEST-KIT             | yes / no                 | `Audit + SBOM`, `Integration lane (Docker)`, `Lib lane + lint + dep-prune`, `Secret + workflow scan`, `Vacuous-green meta-gate`, `review`, `CodeRabbit`                                                                             | `Audit + SBOM` fails on **any** CVE → environment-sensitive; `audit.yml` uploads history as an artifact (never pushes)      |
+| Repo                     | strict / conv-resolution | Required contexts (live set wins)                                                                                                                                                                                                   | Quirk to know                                                                                                                                                                                                                                      |
+| ------------------------ | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Codex-Speed-Test         | no / no                  | `audit`, `browser`, `checks`, `scan`, `smoke`, `CodeRabbit`                                                                                                                                                                         | `audit.yml` auto-fixes & pushes → `action_required` held bot-commit each PR                                                                                                                                                                        |
+| Demo-math-slot-test-only | yes / yes                | `analyze`, `audit`, `check`, `review`, `scan`, `smoke`, `CodeQL`, `CodeRabbit`, `Instruction and control audit`, `Pre-commit gates`, `Secret and dependency scan`, `Workflow and shell lint`                                        | `check` runs `prettier --check .` minus `.prettierignore` (excludes `.github/` + config dotfiles); `audit.yml` is read-only; PR checks fire on `opened`/`reopened`, not always on `synchronize` — re-trigger a stuck head via close+reopen (ex. 4) |
+| Pharmacy-App             | yes / yes                | `analyze`, `lint`, `repo-health`, `review`, `scan`, `test (3.11–3.14)`, `CodeQL`, `CodeRabbit`, `Instruction and control audit`, `Pre-commit gates`, `Secret and dependency scan`, `Workflow and shell lint`                        | Tkinter/SQLite app; CodeRabbit posts a legacy commit-status                                                                                                                                                                                        |
+| testing-kits             | yes / yes                | `analyze`, `review`, `scan`, `unittest (3.10–3.14)`, `CodeQL`, `CodeRabbit`, `Instruction and control audit`, `Package, install, and dependency audit`, `Pre-commit gates`, `Secret and dependency scan`, `Workflow and shell lint` | Canonical source repo for this doc; SonarCloud "new code" fails are usually fixture-by-design                                                                                                                                                      |
+| Health-Prototype         | yes / yes                | `lint`, `test (3.10–3.13)`, `sensitive-scan`, `dependency-review`, `Analyze (actions)`, `Analyze (python)`, `CodeQL`, `CodeRabbit`                                                                                                  | CodeQL is **default setup** — `Analyze (...)`/`CodeQL` post with **no** workflow file in `.github/workflows`                                                                                                                                       |
+| DEP-TEST-KIT             | yes / no                 | `Audit + SBOM`, `Integration lane (Docker)`, `Lib lane + lint + dep-prune`, `Secret + workflow scan`, `Vacuous-green meta-gate`, `review`, `CodeRabbit`                                                                             | `Audit + SBOM` fails on **any** CVE → environment-sensitive; `audit.yml` uploads history as an artifact (never pushes)                                                                                                                             |
 
 `CodeRabbit` is being standardized as required across all six; it only becomes a
 real gate once each repo's `.coderabbit.yaml` is merged and CodeRabbit is
