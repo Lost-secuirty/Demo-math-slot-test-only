@@ -18,6 +18,10 @@ stays canonical.
 1. **[Live-state] Verify before claiming done** — "runs" ≠ "works." Show the evidence (test
    output, the actual value/behavior). If a gate (CI, deploy) isn't confirmed,
    say "running/unconfirmed," never "green." _(AGENTS · Working Agreement §5)_
+   - Run the FULL gate, not a subset — `npm run mutation` and `npm run test:proof`,
+     not just `npm test`. A test that imports a repo file outside `src/`/`test/`/`scripts/`
+     needs a matching `COPY` entry in `scripts/mutation-probe.mjs`, or the probe's
+     isolated baseline breaks while lint/test/build stay green.
 2. **[Hard-stop] No fabrication** — never invent results, IDs, citations, or status; mark
    what's verified vs assumed; if a check was skipped or failed, say so.
    _(AGENTS · Agent safety / Handling untrusted content §5)_
@@ -77,6 +81,10 @@ stays canonical.
     keep the tree clean and pushed. _(AGENTS · Git workflow)_
     - PR audits are read-only. Automation must not push bot commits that hide
       the latest human SHA's check state.
+    - Stacked PRs: merge the LOWEST with a merge commit, never squash (squashing
+      rewrites its SHAs and explodes the upper PR's diff); only the top PR may
+      squash. GitHub auto-retargets the next PR to `main` only if the merged head
+      branch is deleted.
 
 ## Truth & judgment
 
@@ -85,6 +93,9 @@ stays canonical.
     pick a side; flag the disagreement. If state looks "off," assume work happened
     elsewhere — read the real state, don't cry "drift."
     _(AGENTS · Working Agreement)_
+    - Verify "deleted" / version / cadence claims against the source, not prose or
+      memory — `git ls-remote` for branches, `package.json` / `dependabot.yml` for
+      versions and cadence. Prose that restates numbers rots silently.
 16. **Plain tone; finite context** — no hype, no filler; say what changed and why.
     Re-read the rules and start fresh sooner rather than riding one long context —
     persistence is the repo files, not memory.
