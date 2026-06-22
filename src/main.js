@@ -390,14 +390,20 @@ import { tween, wait, Ease } from './utils.js';
         );
       }
       state.inBonus = true;
-      const won = await renderer.run(triggered.payload.cells, state.bet);
-      state.inBonus = false;
-      // apply any theme the player picked during the bonus, now that the scene
-      // has torn down (deferred in applyTheme to avoid a mid-bonus pop, #25)
-      if (deferredTheme) {
-        const pending = deferredTheme;
-        deferredTheme = null;
-        applyTheme(pending);
+      let won;
+      try {
+        won = await renderer.run(triggered.payload.cells, state.bet);
+      } finally {
+        // reset in finally so a renderer throw can't leave inBonus stuck true,
+        // which would silently defer every later theme switch forever (#25)
+        state.inBonus = false;
+        // apply any theme the player picked during the bonus, now that the scene
+        // has torn down (deferred in applyTheme to avoid a mid-bonus pop, #25)
+        if (deferredTheme) {
+          const pending = deferredTheme;
+          deferredTheme = null;
+          applyTheme(pending);
+        }
       }
       state.balance += won;
       showBalance(state.balance);
