@@ -180,6 +180,11 @@ import { tween, wait, Ease } from './utils.js';
   }
 
   let activeTheme = 'classic';
+  // A theme switch requested while the Hold & Win bonus is on screen is deferred
+  // and applied at bonus teardown — repainting the base chrome under the live
+  // bonus scene produces a visible pop when the bonus ends (issue #25). null =
+  // nothing pending.
+  let deferredTheme = null;
 
   // start/stop the ambient dread bed to match the theme — but only once audio
   // is unlocked (the first user gesture); unlock() calls this again afterward.
@@ -190,6 +195,17 @@ import { tween, wait, Ease } from './utils.js';
   }
 
   function applyTheme(name) {
+    // Defer a mid-bonus switch: the bonus scene sits on top of the base chrome,
+    // so repainting now pops when the bonus tears down (#25). Record the choice
+    // and apply it at teardown (see resolve()). The settings panel + persisted
+    // theme are updated by the onTheme handler regardless, so the selection
+    // isn't lost — only the world repaint waits. This also defers
+    // unease.setEnabled, so a bonus that started under spokey keeps its unease
+    // until it ends instead of popping mid-flight.
+    if (state.inBonus) {
+      deferredTheme = name;
+      return;
+    }
     const preset = THEMES[name];
     if (preset) Object.assign(COLORS, preset);
     activeTheme = name;
@@ -216,6 +232,7 @@ import { tween, wait, Ease } from './utils.js';
     bet: ECONOMY.betLevels[ECONOMY.defaultBetIndex],
     busy: false,
     auto: false,
+    inBonus: false, // true only while the Hold & Win bonus scene is live (#25)
     lastInteract: performance.now(),
     forceNext: null, // debug: a crafted 3x3 grid consumed by the next spin
   };
@@ -372,7 +389,22 @@ import { tween, wait, Ease } from './utils.js';
           `feature "${triggered.feature.id}" triggered but has no entry in featureRenderers`,
         );
       }
-      const won = await renderer.run(triggered.payload.cells, state.bet);
+      state.inBonus = true;
+      let won;
+      try {
+        won = await renderer.run(triggered.payload.cells, state.bet);
+      } finally {
+        // reset in finally so a renderer throw can't leave inBonus stuck true,
+        // which would silently defer every later theme switch forever (#25)
+        state.inBonus = false;
+        // apply any theme the player picked during the bonus, now that the scene
+        // has torn down (deferred in applyTheme to avoid a mid-bonus pop, #25)
+        if (deferredTheme) {
+          const pending = deferredTheme;
+          deferredTheme = null;
+          applyTheme(pending);
+        }
+      }
       state.balance += won;
       showBalance(state.balance);
       showWin(won);
