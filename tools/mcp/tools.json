@@ -51,7 +51,8 @@
             "type": "integer",
             "default": 1000000,
             "minimum": 1,
-            "description": "Number of simulated spins."
+            "maximum": 5000000,
+            "description": "Number of simulated spins (the local MCP server caps this at 5,000,000)."
           },
           "modelOverrides": {
             "type": "object",

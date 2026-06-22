@@ -26,7 +26,16 @@ const REPO = process.cwd();
 // errors on the baseline run and the probe fails. scripts/ → test/auditLib
 // imports scripts/audit-lib.mjs; eslint.config.js → test/eslint-footguns
 // imports it (node_modules is symlinked, but config FILES must be copied).
-const COPY = ['src', 'test', 'scripts', 'eslint.config.js', 'package.json', 'vitest.config.js'];
+// tools/ → test/mcp-server imports tools/mcp/server.mjs (the local MCP server).
+const COPY = [
+  'src',
+  'test',
+  'scripts',
+  'tools',
+  'eslint.config.js',
+  'package.json',
+  'vitest.config.js',
+];
 
 // Each mutation: a single targeted source edit that SHOULD break a test.
 const MUTATIONS = [
