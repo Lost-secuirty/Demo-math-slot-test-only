@@ -11,6 +11,25 @@ evergreen rules to `GOLDEN_RULES.md`, mark superseded entries historical.
 
 ---
 
+## 2026-06-23 — ADR-0021: render-layer visual assets permitted (PR-0)
+
+Relaxed ADR-0002's procedural-by-default constraint for the render layer (files
+that import `pixi.js`). Binary visual assets (PNG, sprite sheets, Canva art) are
+now permitted there. Key points to remember:
+
+- **Math/test layer firewall is permanent.** No `pixi.js`/`pixi-filters`/`@pixi/*`
+  imports and no binary assets in pure-logic modules or `test/` files — ever. The
+  verified pinned RTP (0.96081525) and its tests are immutable.
+- **Audio stays procedural** (Web Audio API only) — this decision covers _visual_
+  assets only. Widen with a future ADR if sampled audio is ever needed.
+- **Canva export constraints:** raster only (no SVG); transparent-background PNG
+  requires Pro plan; autofill API is Enterprise-gated (Pro trial does NOT unlock
+  it). Export rate limits ~75/5min, 500/24h per user; download URLs expire in 24h.
+- Lint enforcement (the `no-restricted-imports` firewall rule) lands in PR-1c —
+  until then the boundary is convention-only.
+
+---
+
 ## 2026-06-22 — agent-interop phase B: local stdio MCP server (PR-B1/B2, ADR-0020)
 
 Made the MCP tool-defs genuinely callable via an in-repo **stdio** server

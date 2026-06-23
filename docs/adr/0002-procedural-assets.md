@@ -1,7 +1,12 @@
 # 0002. Procedural assets — no binary art or audio files
 
-- **Status:** Accepted
+- **Status:** Accepted (superseded in part by ADR-0021)
 - **Date:** 2026-06-01
+
+> **Superseded in part by ADR-0021 (2026-06-23):** Binary _visual_ assets are now
+> permitted in the render layer (files that import `pixi.js`). The procedural-by-default
+> constraint still applies to **audio** (no sampled files) and is absolute for the
+> **math/test layer** (no Pixi imports, no binary assets, ever).
 
 ## Context
 

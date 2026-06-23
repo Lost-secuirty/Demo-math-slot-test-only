@@ -29,3 +29,4 @@ To add one: copy `0000-template.md` to the next number, fill it in, set Status.
 | 0018 | Portable docs/kb machine-to-machine knowledge base  | Accepted |
 | 0019 | Static agent-interop surface (A2A Agent Card + MCP) | Accepted |
 | 0020 | Local stdio MCP server (agent-interop phase B)      | Accepted |
+| 0021 | Render-layer visual assets — binary files permitted | Accepted |

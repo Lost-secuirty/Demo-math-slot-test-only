@@ -68,7 +68,12 @@ npm run smoke:browser  # Playwright boot and console-error smoke
 - `package-lock.json`, `dist/`, `node_modules/` — generated; never hand-edit.
 - `.claude/settings.json` and hooks — agent self-config; change only when the
   user explicitly asks (the harness gates this anyway).
-- Don't add binary art/audio assets — assets are procedural by design (ADR-0002).
+- **Render layer** (files that import `pixi.js`) may use binary visual assets — PNG,
+  sprite sheets, Canva-produced art (ADR-0021). Audio stays procedural (ADR-0002 default).
+- **Math/test layer firewall is absolute** — no `pixi.js`/`pixi-filters`/`@pixi/*` imports
+  and no binary assets in pure-logic modules (`slotmath.js`, `wins.js`, `outcome.js`,
+  `reelWindow.js`, `persist.js`, `features/**`) or any `test/` file. The verified pinned RTP
+  (0.96081525) and its tests are immutable — no visual change may touch them.
 - Don't introduce real-money / wagering / payment anything.
 - Secrets, credentials, PII, or personal-tier paths (`PERSONAL_JOURNAL*`, `private/`) —
   never commit; the secret/PII pre-commit + CI gate enforces this (see `SECURITY.md`).

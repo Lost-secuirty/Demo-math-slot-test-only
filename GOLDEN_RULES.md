@@ -72,8 +72,10 @@ stays canonical.
       performance regression without verification on a real GPU.
 13. **Respect the boundaries** — don't hand-edit generated files
     (`package-lock.json`, `dist/`, `node_modules/`); change `.claude/` settings
-    and hooks only when explicitly asked; assets are procedural (no binary
-    art/audio); never add real-money / wagering / payment. _(AGENTS · Boundaries)_
+    and hooks only when explicitly asked; visual assets permitted only in the render
+    layer (ADR-0021); math/test layer firewall (no Pixi, no binary assets, pinned RTP
+    immutable) is absolute; audio stays procedural; never add real-money / wagering /
+    payment. _(AGENTS · Boundaries)_
     - Never hand-edit `package-lock.json`; let npm manage it (`npm install` /
       `npm ci` regenerate it correctly).
 14. **[Hard-stop] Git hygiene** — work on a feature branch, never straight to `main`;
