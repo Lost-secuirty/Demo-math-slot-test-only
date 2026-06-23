@@ -16,27 +16,6 @@ Format: `[priority]` — what it is, why it matters, what PR/phase it belongs to
 
 ---
 
-## Immediate (PR-B2 fold-ins — in progress)
-
-### PR-B2 fold-in: 3 stale doc spots
-
-- `tools/mcp/tools.json` line 2: $comment says "Phase A" — update to phase B + ADR-0020 reference
-- `docs/kb/agent-interop.md` lines 54–56: "phase-A discovery card...phase-B endpoint" — update to current framing
-- `docs/kb/agent-interop.md` line 19: remove "(or the `coins-math-mcp` bin)" — bin is dead
-- `scripts/agent-card-validate.mjs` lines 1–3: update header from phase-A to both A and B
-
-### PR-B2 fold-in: Fix shebang/bin inconsistency
-
-- `tools/mcp/server.mjs` lines 8–13: fix NOTE comment — remove false claim that "bin shim invokes node explicitly"; note bin is dead (private package, shebang removed)
-- `package.json`: remove the `"bin": { "coins-math-mcp": ... }` entry entirely
-
-### PR-B2 fold-in: 2 missing tests in agent-card.test.js
-
-- Phase-A branch coverage: synthetic phase-A happy-path + phase-A overclaim test (localMcpServer.available:true in phase A should fail)
-- `localMcpServer.entry=''` empty-string branch: one test asserting ok===false
-
----
-
 ## Phase 0 — governance prerequisite (next after PR-B2)
 
 ### PR-0: ADR-0021 — render-layer visual assets permitted
