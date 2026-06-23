@@ -8,9 +8,9 @@
 // NOTE: intentionally NO `#!/usr/bin/env node` shebang. This module is also
 // IMPORTED by the in-memory integration test, and Vite/vitest's transform
 // mis-parses a shebang that leads an imported module on Windows ("Invalid or
-// unexpected token"). Run it the documented way — `npm run mcp:serve` or
-// `node tools/mcp/server.mjs` (the `bin` shim and MCP client config both
-// invoke node explicitly), so the shebang buys nothing here.
+// unexpected token"). The `mcp:serve` script and the MCP client config both
+// invoke `node` explicitly — no shebang needed for those paths. A shebang-less
+// file can't double as a Unix `bin`; this package exposes no `bin` entry.
 //
 // Tool names/titles/descriptions are sourced from the static contract
 // `tools/mcp/tools.json` so the live server and the published tool-defs can

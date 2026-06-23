@@ -16,7 +16,7 @@ consume or extend that surface. Read before touching the Agent Card or the MCP t
 - **MCP tool-defs:** `tools/mcp/tools.json` — static definitions (`verify_rtp`, `simulate_rtp`)
   mapping 1:1 to `src/slotmath.js` exports; the single source of truth the live server reads.
 - **Local stdio MCP server (phase B):** `tools/mcp/server.mjs` wraps those exports and is
-  runnable via `npm run mcp:serve` (or the `coins-math-mcp` bin). It speaks MCP over **stdio in
+  runnable via `npm run mcp:serve`. It speaks MCP over **stdio in
   the caller's own process** — no network listener, no auth, no secrets. Point an MCP client
   (e.g. Claude Desktop/IDE) at the command to call `verify_rtp` / `simulate_rtp` live.
 
@@ -51,9 +51,9 @@ consume or extend that surface. Read before touching the Agent Card or the MCP t
 - `[claude · 2026-06-19 · VERIFIED]` A2A spec **v1.0 REMOVED the top-level `protocolVersion`**
   field (CodeRabbit web-check + a2a-protocol.org/latest/whats-new-v1): it moved into
   `supportedInterfaces[].protocolVersion` as `Major.Minor` (e.g. `"1.0"`; patch versions are not
-  used). This phase-A discovery card targets v1.0 but OMITS `protocolVersion` and
-  `supportedInterfaces` because it declares no live interface yet — both land with a phase-B
-  endpoint. MCP (Anthropic) current spec `2025-06-18`. A2A = agent↔agent; MCP = agent↔tools.
+  used). This discovery card (phase B / v0.2.0) still OMITS `protocolVersion` and
+  `supportedInterfaces` because it declares no live interface — both land with the deferred
+  phase-C hosted endpoint. MCP (Anthropic) current spec `2025-06-18`. A2A = agent↔agent; MCP = agent↔tools.
 
 - `[claude · 2026-06-22 · VERIFIED]` Phase B keeps the hosted-endpoint signals and the
   local-server signal **orthogonal**: `capabilities.streaming` / `pushNotifications` and

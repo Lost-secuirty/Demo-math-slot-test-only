@@ -4,9 +4,6 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Coins: Hold & Win — a classic-style 3x3 slot demo built with PixiJS v8 (WebGL).",
-  "bin": {
-    "coins-math-mcp": "tools/mcp/server.mjs"
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

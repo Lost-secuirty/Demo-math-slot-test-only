@@ -1,5 +1,5 @@
 {
-  "$comment": "Static MCP tool definitions for this repo's deterministic slot-math capabilities. Phase A: there is NO live MCP server (see docs/adr/0019-agent-interop-static-surface.md). Each tool maps 1:1 to an export in src/slotmath.js; the schemas mirror those functions' real signatures and return shapes.",
+  "$comment": "Static MCP tool definitions for this repo's deterministic slot-math capabilities. Phase B: the local stdio MCP server (see docs/adr/0020-local-stdio-mcp-server.md) reads these definitions at startup so the live server and the published tool-defs can never drift. Each tool maps 1:1 to an export in src/slotmath.js; the schemas mirror those functions' real signatures and return shapes.",
   "mcpVersion": "2025-06-18",
   "tools": [
     {

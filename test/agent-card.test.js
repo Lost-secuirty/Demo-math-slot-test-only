@@ -89,6 +89,30 @@ describe.skipIf(!present)('agent-interop surface', () => {
     expect(validateAgentSurface({ card: bad, tools, phase, fileExists }).ok).toBe(false);
   });
 
+  it('bites when phase B localMcpServer.entry is an empty string', () => {
+    const bad = structuredClone(card);
+    bad['x-lifecycle'].localMcpServer.entry = '';
+    expect(validateAgentSurface({ card: bad, tools, phase, fileExists }).ok).toBe(false);
+  });
+
+  // --- phase-A teeth: localMcpServer must be absent or disabled ---
+
+  it('validates a well-formed phase-A card with no localMcpServer', () => {
+    const phaseA = structuredClone(card);
+    phaseA['x-lifecycle'].interopPhase = 'A';
+    delete phaseA['x-lifecycle'].localMcpServer;
+    const { ok, errors } = validateAgentSurface({ card: phaseA, tools, phase: 'A', fileExists });
+    expect(errors).toEqual([]);
+    expect(ok).toBe(true);
+  });
+
+  it('bites when phase A claims an available localMcpServer (no callable server in phase A)', () => {
+    const bad = structuredClone(card);
+    bad['x-lifecycle'].interopPhase = 'A';
+    bad['x-lifecycle'].localMcpServer.available = true;
+    expect(validateAgentSurface({ card: bad, tools, phase: 'A', fileExists }).ok).toBe(false);
+  });
+
   // --- structural teeth (phase-independent) ---
 
   it('bites when a required A2A field is missing', () => {

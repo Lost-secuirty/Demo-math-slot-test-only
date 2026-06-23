@@ -1,6 +1,6 @@
 // Validate the static agent-interop surface (A2A Agent Card + MCP tool-defs) and enforce the
-// no-overclaim honesty rule from ADR-0019: while STATUS.md records `agent_interop_phase: A`,
-// the card must NOT advertise a live, callable endpoint. Pure Node stdlib — no new deps.
+// no-overclaim honesty rule from ADR-0019 / ADR-0020: the card must not advertise a hosted
+// endpoint (phase C) before it exists. Covers phases A and B. Pure Node stdlib — no new deps.
 //
 // `validateAgentSurface` and `parsePhase` are exported so test/agent-card.test.js can prove
 // the gate bites (a broken/overclaiming card must fail). `node scripts/agent-card-validate.mjs`
