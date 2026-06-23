@@ -5,7 +5,7 @@
     {
       "name": "verify_rtp",
       "title": "Verify RTP (exact)",
-      "description": "Compute exact theoretical RTP, house edge, per-line hit frequency, standard deviation, and jackpot odds by full payline enumeration. Deterministic; no RNG, no network. Wraps theoreticalRtp(buildModel(modelOverrides)) and parSheet() in src/slotmath.js.",
+      "description": "Compute exact theoretical RTP, house edge, per-line hit frequency, standard deviation, and jackpot odds by full payline enumeration. Deterministic; no RNG, no network. Wraps theoreticalRtp(buildModel(modelOverrides)) in src/slotmath.js.",
       "inputSchema": {
         "type": "object",
         "properties": {
