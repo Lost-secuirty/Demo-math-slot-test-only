@@ -167,6 +167,19 @@ describe('Phase B — local stdio MCP server (tools/mcp/server.mjs)', () => {
     expect(textOf(res).toLowerCase()).toContain('enumerate');
   });
 
+  it('a fractional reels override is rejected (would infinitely recurse, not just over-allocate)', async () => {
+    // reels:1.5 passes a naive range check but never hits theoreticalRtp's
+    // `depth === reels` base case -> stack overflow. The integer guard must bite.
+    const res = await client
+      .callTool({ name: 'verify_rtp', arguments: { modelOverrides: { reels: 1.5 } } })
+      .catch((err) => ({
+        isError: true,
+        content: [{ type: 'text', text: String(err?.message ?? err) }],
+      }));
+    expect(res.isError).toBe(true);
+    expect(textOf(res).toLowerCase()).toContain('integer');
+  });
+
   it('a huge grid override that would OOM-allocate is rejected, not crashed (simulate_rtp)', async () => {
     const res = await client
       .callTool({

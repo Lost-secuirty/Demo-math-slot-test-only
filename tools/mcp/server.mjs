@@ -75,9 +75,11 @@ function boundedModel(overrides) {
       : 0;
   const symbolCount = Array.isArray(model.symbols) ? model.symbols.length : 0;
 
-  if (!(reels >= 1 && reels <= MAX_REELS))
+  // Integrality matters, not just range: a fractional reels (e.g. 1.5) never
+  // hits theoreticalRtp's `depth === reels` base case -> unbounded recursion.
+  if (!(Number.isInteger(reels) && reels >= 1 && reels <= MAX_REELS))
     throw new ToolInputError(`reels must be an integer 1..${MAX_REELS} (got ${reels})`);
-  if (!(rows >= 1 && rows <= MAX_ROWS))
+  if (!(Number.isInteger(rows) && rows >= 1 && rows <= MAX_ROWS))
     throw new ToolInputError(`rows must be an integer 1..${MAX_ROWS} (got ${rows})`);
   if (!(symbolCount >= 1 && symbolCount <= MAX_SYMBOLS))
     throw new ToolInputError(`symbols must number 1..${MAX_SYMBOLS} (got ${symbolCount})`);
