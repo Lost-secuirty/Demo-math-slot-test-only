@@ -4,11 +4,14 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Coins: Hold & Win — a classic-style 3x3 slot demo built with PixiJS v8 (WebGL).",
+  "bin": {
+    "coins-math-mcp": "tools/mcp/server.mjs"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src scripts test verify.mjs",
+    "lint": "eslint src scripts test tools verify.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
@@ -18,12 +21,15 @@
     "mutation": "node scripts/mutation-probe.mjs",
     "audit": "node scripts/audit-drift.mjs",
     "agent-card": "node scripts/agent-card-validate.mjs",
+    "mcp:serve": "node tools/mcp/server.mjs",
     "smoke:browser": "node scripts/browser-smoke.mjs",
     "smoke:browser:planted": "node scripts/browser-smoke.mjs --planted-bad=settings-open"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "pixi-filters": "^6.1.4",
-    "pixi.js": "^8.19.0"
+    "pixi.js": "^8.19.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
